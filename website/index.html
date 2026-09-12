@@ -39,6 +39,7 @@
         <ul class="nav-links">
           <li><a href="#features" class="nav-link">功能特性</a></li>
           <li><a href="#showcase" class="nav-link">设计细节</a></li>
+          <li><a href="#changelog" class="nav-link">版本动态</a></li>
           <li><a href="#install" class="nav-link">安装说明</a></li>
           <li><a href="#faq" class="nav-link">常见问题</a></li>
         </ul>
@@ -260,6 +261,51 @@
             <span style="color: #FFAA55; font-weight: 700;">Exclusive Member Benefit:</span> Enjoy up to <span style="color: #FF5500; font-weight: 800; font-size: 1.15em;">50% discount</span> on all new product launches this <span style="text-decoration: underline;">Friday</span>!
             <div style="font-size: 0.78rem; color: #00D26A; margin-top: 10px;">✅ 局部高亮色、字号阶梯、加粗与下划线完整保留</div>
           </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Version Updates / Changelog Section -->
+  <section id="changelog" class="changelog-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Version Updates</span>
+        <h2 class="section-title">📢 最近更新 · v1.0.2 版本动态</h2>
+        <p class="section-desc">告别翻译报错中断与卡顿，专注复杂排版兼容性与响应性能跃升。</p>
+      </div>
+
+      <div class="changelog-grid">
+        <div class="changelog-card">
+          <div class="changelog-badge badge-fix">🛡️ 核心修复</div>
+          <h3 class="changelog-title">彻底解决混合字体翻译报错</h3>
+          <p class="changelog-desc">
+            修复画布中存在多字重/多字体的富文本在批量翻译或填充时抛出 <code>Cannot set characters on a TextNode with mixed fonts</code> 的异常。翻译前智能统一字重与字体族，面对复杂手搓排版 100% 稳妥通过，绝不中断。
+          </p>
+        </div>
+
+        <div class="changelog-card">
+          <div class="changelog-badge badge-perf">⚡ 性能加速</div>
+          <h3 class="changelog-title">行高规范与排版处理提速 80%+</h3>
+          <p class="changelog-desc">
+            重构行高自动适配与字体加载算法，由原逐字遍历扫描优化为基于 Font Set 唯一字集去重并发加载。面对数百上千个文本图层的大型画板，实现秒级极速响应。
+          </p>
+        </div>
+
+        <div class="changelog-card">
+          <div class="changelog-badge badge-opt">🔄 体验优化</div>
+          <h3 class="changelog-title">撤销重做（Undo/Redo）平滑还原</h3>
+          <p class="changelog-desc">
+            微调本地撤销与图层样式还原逻辑，确保在撤回翻译或画板全局调色时，图层富文本样式与字阶精准复原，杜绝偶现的跳色与排版错位。
+          </p>
+        </div>
+
+        <div class="changelog-card">
+          <div class="changelog-badge badge-docs">🎨 视觉焕新</div>
+          <h3 class="changelog-title">痛点收益导向文案 & 1080P 质感封面</h3>
+          <p class="changelog-desc">
+            设计专区 README 全面转向“痛点 vs 收益”导向，文案通风精简，换装 1920x1080 现代暗黑质感封面，一眼看懂核心提效价值。
+          </p>
         </div>
       </div>
     </div>
