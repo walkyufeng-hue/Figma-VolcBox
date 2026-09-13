@@ -2229,7 +2229,7 @@ const Handlers = {
 
   // --- 3. Fill Handlers ---
   'fill/smart': async (requestId) => {
-    const textNodes = SelectionEngine.getTextNodes();
+    const textNodes = SelectionEngine.getTextNodes(null, true);
     if (textNodes.length === 0) {
       figma.notify('请先选中包含文本的图层或画板');
       sendToUI({ type: 'task/failed', requestId, payload: { taskId: requestId, error: { message: '未选中文本图层' } } });
