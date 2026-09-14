@@ -243,13 +243,6 @@ function updateVersionInFiles(ver) {
   web = web.replace(/class="logo-badge">v[0-9.]+<\/span>/g, `class="logo-badge">${vTag}</span>`);
   web = web.replace(/id="plugin-version">v[0-9.]+<\/span>/g, `id="plugin-version">${vTag}</span>`);
   fs.writeFileSync(webPath, web, 'utf-8');
-
-  const vDir = path.join(rootDir, `VolcBox_${vTag}`);
-  if (!fs.existsSync(vDir)) fs.mkdirSync(vDir, { recursive: true });
-  fs.copyFileSync(path.join(rootDir, 'manifest.json'), path.join(vDir, 'manifest.json'));
-  fs.copyFileSync(path.join(rootDir, 'code.js'), path.join(vDir, 'code.js'));
-  fs.copyFileSync(path.join(rootDir, 'ui.html'), path.join(vDir, 'ui.html'));
-  fs.copyFileSync(path.join(rootDir, 'LICENSE'), path.join(vDir, 'LICENSE'));
 }
 
 function updateReadmeChangelog(rel) {
@@ -271,9 +264,6 @@ function updateReadmeChangelog(rel) {
 
   readme = readme.replace(/## 📢 最近更新 · v[0-9.]+ 版本动态[\s\S]*?(?=---)/, `${changelogEntry.trim()}\n\n`);
   fs.writeFileSync(readmePath, readme, 'utf-8');
-
-  const vDirReadme = path.join(rootDir, `VolcBox_${vTag}`, 'README.md');
-  fs.writeFileSync(vDirReadme, readme, 'utf-8');
 }
 
 function updateWebsiteChangelog(rel) {
@@ -329,13 +319,21 @@ function executeRelease(rel) {
   execSync(`node scripts/switch-account.js walkyufeng`, execOptions);
 
   const zipName = `VolcBox_${vTag}.zip`;
-  execSync(`zip -r "${zipName}" manifest.json code.js ui.html README.md LICENSE "VolcBox_${vTag}/"`, execPipe);
-  execSync(`cp "${zipName}" "website/${zipName}"`, execPipe);
+  const webDir = path.join(rootDir, 'website');
+  // Clean up any old zips in website/ so only the latest is kept
+  fs.readdirSync(webDir).forEach(f => {
+    if (f.startsWith('VolcBox_v') && f.endsWith('.zip')) {
+      try { fs.unlinkSync(path.join(webDir, f)); } catch (e) {}
+    }
+  });
+
+  // Package directly into website/
+  execSync(`zip -j "website/${zipName}" manifest.json code.js ui.html README.md LICENSE`, execPipe);
 
   execSync(`git config user.name "walkyufeng-hue"`, execOptions);
   execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
   execSync(`git add -A`, execOptions);
-  execSync(`GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
+  execSync(`GIT_AUTHOR_NAME="walkyufeng-hue" GIT_AUTHOR_EMAIL="walkyufeng@gmail.com" GIT_COMMITTER_NAME="walkyufeng-hue" GIT_COMMITTER_EMAIL="walkyufeng@gmail.com" GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
   execSync(`git tag -d ${vTag} 2>/dev/null || true`, execPipe);
   execSync(`git tag ${vTag}`, execOptions);
   execSync(`git push walkyufeng main && git push walkyufeng ${vTag} --force`, execOptions);
@@ -351,42 +349,48 @@ function executeRelease(rel) {
     console.error(`⚠️ Cloudflare walkyufeng deploy error:`, e.message);
   }
 
-  // --- STEP 2: haifengcy branch ---
-  console.log(`\n--- [2/2] Processing haifengcy (branch: haifengcy) ---`);
-  execSync(`git checkout haifengcy`, execOptions);
-  rel.applyPatch();
-  updateVersionInFiles(rel.version);
-  updateReadmeChangelog(rel);
-  updateWebsiteChangelog(rel);
-
-  execSync(`node scripts/switch-account.js haifengcy`, execOptions);
-
-  execSync(`zip -r "${zipName}" manifest.json code.js ui.html README.md LICENSE "VolcBox_${vTag}/"`, execPipe);
-  execSync(`cp "${zipName}" "website/${zipName}"`, execPipe);
-
-  execSync(`git config user.name "haifengcy"`, execOptions);
-  execSync(`git config user.email "haifengcy@gmail.com"`, execOptions);
-  execSync(`git add -A`, execOptions);
-  execSync(`GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
-  execSync(`git tag -d ${vTag} 2>/dev/null || true`, execPipe);
-  execSync(`git tag ${vTag}`, execOptions);
-  execSync(`git push haifengcy haifengcy:main && git push haifengcy ${vTag} --force`, execOptions);
-  console.log(`✅ Pushed ${vTag} to haifengcy!`);
-
+  // --- STEP 2: haifengcy branch (safely wrapped in try-finally) ---
   try {
-    const tokens = JSON.parse(fs.readFileSync(path.join(rootDir, '.tokens.json'), 'utf-8'));
-    const t = tokens.haifengcy;
-    const cfCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${t.cfAccountId} CLOUDFLARE_API_TOKEN=${t.cfApiToken} npx wrangler pages deploy website --project-name=volcbox --branch=main`;
-    execSync(cfCmd, execOptions);
-    console.log(`🎉 Cloudflare Pages (volcbox) deployed!`);
-  } catch (e) {
-    console.error(`⚠️ Cloudflare haifengcy deploy error:`, e.message);
-  }
+    console.log(`\n--- [2/2] Processing haifengcy (branch: haifengcy) ---`);
+    execSync(`git checkout haifengcy`, execOptions);
+    rel.applyPatch();
+    updateVersionInFiles(rel.version);
+    updateReadmeChangelog(rel);
+    updateWebsiteChangelog(rel);
 
-  // --- STEP 3: Switch back to main for walkyufeng ---
-  execSync(`git checkout main`, execOptions);
-  execSync(`git config user.name "walkyufeng-hue"`, execOptions);
-  execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
+    execSync(`node scripts/switch-account.js haifengcy`, execOptions);
+
+    // Package directly into website/
+    execSync(`zip -j "website/${zipName}" manifest.json code.js ui.html README.md LICENSE`, execPipe);
+
+    execSync(`git config user.name "haifengcy"`, execOptions);
+    execSync(`git config user.email "haifengcy@gmail.com"`, execOptions);
+    execSync(`git add -A`, execOptions);
+    execSync(`GIT_AUTHOR_NAME="haifengcy" GIT_AUTHOR_EMAIL="haifengcy@gmail.com" GIT_COMMITTER_NAME="haifengcy" GIT_COMMITTER_EMAIL="haifengcy@gmail.com" GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
+    execSync(`git tag -d ${vTag} 2>/dev/null || true`, execPipe);
+    execSync(`git tag ${vTag}`, execOptions);
+    execSync(`git push haifengcy haifengcy:main && git push haifengcy ${vTag} --force`, execOptions);
+    console.log(`✅ Pushed ${vTag} to haifengcy!`);
+
+    try {
+      const tokens = JSON.parse(fs.readFileSync(path.join(rootDir, '.tokens.json'), 'utf-8'));
+      const t = tokens.haifengcy;
+      const cfCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${t.cfAccountId} CLOUDFLARE_API_TOKEN=${t.cfApiToken} npx wrangler pages deploy website --project-name=volcbox --branch=main`;
+      execSync(cfCmd, execOptions);
+      console.log(`🎉 Cloudflare Pages (volcbox) deployed!`);
+    } catch (e) {
+      console.error(`⚠️ Cloudflare haifengcy deploy error:`, e.message);
+    }
+  } catch (err) {
+    console.error(`⚠️ Error during haifengcy step:`, err.message);
+  } finally {
+    // --- STEP 3: Guarantee switch back to main for walkyufeng ---
+    console.log(`\n--- [3/3] Restoring workspace to main (walkyufeng) ---`);
+    execSync(`git checkout main`, execOptions);
+    execSync(`node scripts/switch-account.js walkyufeng`, execOptions);
+    execSync(`git config user.name "walkyufeng-hue"`, execOptions);
+    execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
+  }
 
   const state = loadState();
   if (!state.completed.some(c => c.version === rel.version)) {
