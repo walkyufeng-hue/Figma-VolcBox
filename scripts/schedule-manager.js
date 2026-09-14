@@ -2,18 +2,16 @@
 
 /**
  * VolcBox 5-Day Scheduled Release Manager
- * Automatically releases 5 finely-tuned patches over 5 days with unique times.
- * Supports dual-account deployment: walkyufeng-hue & haifengcy.
+ * Dual-branch, dual-account isolated release system.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = '/Users/haifeng/Desktop/Volc AI/Figma插件/VolcBox重构版';
 const stateFile = path.join(rootDir, '.release-schedule.json');
 
-// 5 Specific releases with designer-oriented pain-point & benefit changelog
 const RELEASES = [
   {
     version: '1.0.3',
@@ -70,10 +68,9 @@ const RELEASES = [
 
       if (code.includes(target)) {
         code = code.replace(target, replacement);
-        code = code.replace(`SelectionEngine.getTextNodes();`, `SelectionEngine.getTextNodes(null, true);`);
-        fs.writeFileSync(codePath, code, 'utf-8');
-        console.log('✅ Applied Patch 1 to code.js');
       }
+      code = code.replace(`const textNodes = SelectionEngine.getTextNodes();`, `const textNodes = SelectionEngine.getTextNodes(null, true);`);
+      fs.writeFileSync(codePath, code, 'utf-8');
     }
   },
   {
@@ -116,7 +113,6 @@ const RELEASES = [
       if (code.includes(target)) {
         code = code.replace(target, replacement);
         fs.writeFileSync(codePath, code, 'utf-8');
-        console.log('✅ Applied Patch 2 to code.js');
       }
     }
   },
@@ -151,7 +147,6 @@ const RELEASES = [
       if (code.includes(target)) {
         code = code.replace(target, replacement);
         fs.writeFileSync(codePath, code, 'utf-8');
-        console.log('✅ Applied Patch 3 to code.js');
       }
     }
   },
@@ -173,7 +168,6 @@ const RELEASES = [
       if (ui.includes(target)) {
         ui = ui.replace(target, replacement);
         fs.writeFileSync(uiPath, ui, 'utf-8');
-        console.log('✅ Applied Patch 4 to ui.html');
       }
     }
   },
@@ -205,7 +199,6 @@ const RELEASES = [
       if (!ui.includes('Global Keyboard Shortcuts (ESC & Cmd/Ctrl+Enter)')) {
         ui = ui.replace('</body>', `${shortcutCode}</body>`);
         fs.writeFileSync(uiPath, ui, 'utf-8');
-        console.log('✅ Applied Patch 5 to ui.html');
       }
     }
   }
@@ -224,9 +217,9 @@ function saveState(state) {
   fs.writeFileSync(stateFile, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-function updateVersion(ver) {
+function updateVersionInFiles(ver) {
   const vTag = `v${ver}`;
-  console.log(`\n📌 Bumping version to ${vTag}...`);
+  console.log(`📌 Updating version references to ${vTag}...`);
 
   const uiPath = path.join(rootDir, 'ui.html');
   let ui = fs.readFileSync(uiPath, 'utf-8');
@@ -299,72 +292,113 @@ function updateWebsiteChangelog(rel) {
           <p class="changelog-desc">${rel.description} 收益：${rel.benefit}</p>
         </div>\n`;
 
-  web = web.replace(/<div class="changelog-grid">/, `<div class="changelog-grid">\n${newCard}`);
+  if (!web.includes(rel.highlight)) {
+    web = web.replace(/<div class="changelog-grid">/, `<div class="changelog-grid">\n${newCard}`);
+  }
   fs.writeFileSync(webPath, web, 'utf-8');
 }
 
 function executeRelease(rel) {
-  console.log(`\n======================================================`);
-  console.log(`🚀 Executing Release: v${rel.version} (${rel.scheduledTime})`);
-  console.log(`📌 Title: ${rel.title}`);
-  console.log(`======================================================\n`);
+  const vTag = `v${rel.version}`;
+  const commitDate = rel.scheduledTime + ' +0800';
 
+  console.log(`\n===============================================================`);
+  console.log(`🚀 Executing Release: ${vTag} with timestamp: ${commitDate}`);
+  console.log(`📌 Title: ${rel.title}`);
+  console.log(`===============================================================\n`);
+
+  const execOptions = {
+    cwd: rootDir,
+    stdio: 'inherit',
+    env: { ...process.env, PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:' + (process.env.PATH || '') }
+  };
+  const execPipe = {
+    cwd: rootDir,
+    stdio: 'pipe',
+    env: { ...process.env, PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:' + (process.env.PATH || '') }
+  };
+
+  // --- STEP 1: Main branch (walkyufeng) ---
+  console.log(`--- [1/2] Processing walkyufeng (branch: main) ---`);
+  execSync(`git checkout main`, execOptions);
   rel.applyPatch();
-  updateVersion(rel.version);
+  updateVersionInFiles(rel.version);
   updateReadmeChangelog(rel);
   updateWebsiteChangelog(rel);
 
-  const vTag = `v${rel.version}`;
-  const zipName = `VolcBox_${vTag}.zip`;
-  execSync(`zip -r "${zipName}" manifest.json code.js ui.html README.md LICENSE "VolcBox_${vTag}/"`, { cwd: rootDir, stdio: 'pipe' });
-  execSync(`cp "${zipName}" "website/${zipName}"`, { cwd: rootDir, stdio: 'pipe' });
-  console.log(`✅ Packaged ${zipName}`);
+  execSync(`node scripts/switch-account.js walkyufeng`, execOptions);
 
-  console.log(`\n--- [1/2] Deploying to walkyufeng ecosystem ---`);
-  execSync(`node scripts/switch-account.js walkyufeng`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git add -A && git commit -m "${rel.title}"`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git tag -d ${vTag} 2>/dev/null || true`, { cwd: rootDir, stdio: 'pipe' });
-  execSync(`git tag ${vTag}`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git push walkyufeng main && git push walkyufeng ${vTag} --force`, { cwd: rootDir, stdio: 'inherit' });
-  
+  const zipName = `VolcBox_${vTag}.zip`;
+  execSync(`zip -r "${zipName}" manifest.json code.js ui.html README.md LICENSE "VolcBox_${vTag}/"`, execPipe);
+  execSync(`cp "${zipName}" "website/${zipName}"`, execPipe);
+
+  execSync(`git config user.name "walkyufeng-hue"`, execOptions);
+  execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
+  execSync(`git add -A`, execOptions);
+  execSync(`GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
+  execSync(`git tag -d ${vTag} 2>/dev/null || true`, execPipe);
+  execSync(`git tag ${vTag}`, execOptions);
+  execSync(`git push walkyufeng main && git push walkyufeng ${vTag} --force`, execOptions);
+  console.log(`✅ Pushed ${vTag} to walkyufeng!`);
+
   try {
     const tokens = JSON.parse(fs.readFileSync(path.join(rootDir, '.tokens.json'), 'utf-8'));
     const t = tokens.walkyufeng;
     const cfCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${t.cfAccountId} CLOUDFLARE_API_TOKEN=${t.cfApiToken} npx wrangler pages deploy website --project-name=figma-volcbox --branch=main`;
-    execSync(cfCmd, { cwd: rootDir, stdio: 'inherit' });
-    console.log(`🎉 Cloudflare Pages (figma-volcbox) updated!`);
+    execSync(cfCmd, execOptions);
+    console.log(`🎉 Cloudflare Pages (figma-volcbox) deployed!`);
   } catch (e) {
-    console.error(`⚠️ Cloudflare walkyufeng deploy warning:`, e.message);
+    console.error(`⚠️ Cloudflare walkyufeng deploy error:`, e.message);
   }
 
-  console.log(`\n--- [2/2] Deploying to haifengcy ecosystem ---`);
-  execSync(`node scripts/switch-account.js haifengcy`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git add -A && git commit -m "${rel.title}"`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git tag -d ${vTag} 2>/dev/null || true`, { cwd: rootDir, stdio: 'pipe' });
-  execSync(`git tag ${vTag}`, { cwd: rootDir, stdio: 'inherit' });
-  execSync(`git push haifengcy HEAD:main && git push haifengcy ${vTag} --force`, { cwd: rootDir, stdio: 'inherit' });
+  // --- STEP 2: haifengcy branch ---
+  console.log(`\n--- [2/2] Processing haifengcy (branch: haifengcy) ---`);
+  execSync(`git checkout haifengcy`, execOptions);
+  rel.applyPatch();
+  updateVersionInFiles(rel.version);
+  updateReadmeChangelog(rel);
+  updateWebsiteChangelog(rel);
+
+  execSync(`node scripts/switch-account.js haifengcy`, execOptions);
+
+  execSync(`zip -r "${zipName}" manifest.json code.js ui.html README.md LICENSE "VolcBox_${vTag}/"`, execPipe);
+  execSync(`cp "${zipName}" "website/${zipName}"`, execPipe);
+
+  execSync(`git config user.name "haifengcy"`, execOptions);
+  execSync(`git config user.email "haifengcy@gmail.com"`, execOptions);
+  execSync(`git add -A`, execOptions);
+  execSync(`GIT_AUTHOR_DATE="${commitDate}" GIT_COMMITTER_DATE="${commitDate}" git commit -m "${rel.title}"`, execOptions);
+  execSync(`git tag -d ${vTag} 2>/dev/null || true`, execPipe);
+  execSync(`git tag ${vTag}`, execOptions);
+  execSync(`git push haifengcy haifengcy:main && git push haifengcy ${vTag} --force`, execOptions);
+  console.log(`✅ Pushed ${vTag} to haifengcy!`);
 
   try {
     const tokens = JSON.parse(fs.readFileSync(path.join(rootDir, '.tokens.json'), 'utf-8'));
     const t = tokens.haifengcy;
     const cfCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${t.cfAccountId} CLOUDFLARE_API_TOKEN=${t.cfApiToken} npx wrangler pages deploy website --project-name=volcbox --branch=main`;
-    execSync(cfCmd, { cwd: rootDir, stdio: 'inherit' });
-    console.log(`🎉 Cloudflare Pages (volcbox) updated!`);
+    execSync(cfCmd, execOptions);
+    console.log(`🎉 Cloudflare Pages (volcbox) deployed!`);
   } catch (e) {
-    console.error(`⚠️ Cloudflare haifengcy deploy warning:`, e.message);
+    console.error(`⚠️ Cloudflare haifengcy deploy error:`, e.message);
   }
 
-  execSync(`node scripts/switch-account.js walkyufeng`, { cwd: rootDir, stdio: 'inherit' });
+  // --- STEP 3: Switch back to main for walkyufeng ---
+  execSync(`git checkout main`, execOptions);
+  execSync(`git config user.name "walkyufeng-hue"`, execOptions);
+  execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
 
   const state = loadState();
-  state.completed.push({
-    version: rel.version,
-    releasedAt: new Date().toISOString(),
-    title: rel.title
-  });
-  saveState(state);
+  if (!state.completed.some(c => c.version === rel.version)) {
+    state.completed.push({
+      version: rel.version,
+      releasedAt: commitDate,
+      title: rel.title
+    });
+    saveState(state);
+  }
 
-  console.log(`\n🌟 Version v${rel.version} released and synchronized across both ecosystems successfully!\n`);
+  console.log(`\n🎉 ${vTag} released across both ecosystems with date ${commitDate} successfully!\n`);
 }
 
 function checkAndRunDue() {
