@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v1.0.5-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+[![Version](https://img.shields.io/badge/version-v1.0.6-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
 [![Website](https://img.shields.io/badge/website-figma--volcbox.pages.dev-orange.svg?style=flat-square)](https://figma-volcbox.pages.dev)
 [![Figma](https://img.shields.io/badge/Figma-Plugin_API-F24E1E?style=flat-square&logo=figma&logoColor=white)](https://www.figma.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.0.5.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.0.6.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -27,12 +27,15 @@
 
 ---
 
-## 📢 最近更新 · v1.0.5 版本动态
+## 📢 最近更新 · v1.0.6 版本动态
 
-> 💡 **黑白线框原型也能直接拉动滑块换主题色，省去手动一个个吸色改底色的繁琐步骤。**
+> 💡 **批量导出大批设计稿时，进度与 Key 调度状态一清二楚，安心感倍增。**
 
 | 模块 | 🎯 更新亮点 | ⚡ 实际设计收益 |
 | :--- | :--- | :--- |
+| 🖼️ 账号池压缩 | **TinyPNG 账号池平滑轮换状态透明化**<br>当 TinyPNG 多 Key 池中某个 Key 达到 500 次月度上限时，优化界面状态反馈与弹窗提示，明确告知当前自动切换至第几张备用 Key。 | 批量导出大批设计稿时，进度与 Key 调度状态一清二楚，安心感倍增。 |
+
+--- | :--- | :--- |
 | 🎨 全局调色 | **纯黑与纯白图层极端色值显色增益**<br>纯黑与纯白在 HSL 空间色相饱和度为 0。本次在非保护纯色模式下增加极端色值微量增益补偿，拉动色相滑块即可将纯黑白线框转为有彩色。 | 黑白线框原型也能直接拉动滑块换主题色，省去手动一个个吸色改底色的繁琐步骤。 |
 
 --- | :--- | :--- |
@@ -71,7 +74,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.0.5.zip](https://figma-volcbox.pages.dev/VolcBox_v1.0.5.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.0.6.zip](https://figma-volcbox.pages.dev/VolcBox_v1.0.6.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：
