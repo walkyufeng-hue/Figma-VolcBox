@@ -201,6 +201,33 @@ const RELEASES = [
         fs.writeFileSync(uiPath, ui, 'utf-8');
       }
     }
+  },
+  {
+    version: '1.0.8',
+    scheduledTime: '2026-09-18 16:45:00',
+    title: 'fix(crop): 重构 PNG 透明留白裁切引擎，自适应过滤噪点微光并精准紧贴内容边缘',
+    module: '✂️ 裁切透明边缘',
+    highlight: '自适应抗噪裁切引擎，一键剔除 3D 渲染与设计图层多余透明留白',
+    benefit: '从 3D 软件或 AI 工具导出的带微光、阴影渐变透明图层，不再误报“已贴边”，一键精准贴合图形真实边缘，对齐排版不偏位。',
+    description: '重构边缘像素扫描算法，引入自适应抗噪与行/列像素密度校验，彻底解决带微弱半透明光晕时裁切误判失效的问题；全面支持多图层同时批量裁切与画板安全自适应缩放。',
+    applyPatch: () => {
+      const codePath = path.join(rootDir, 'code.js');
+      let code = fs.readFileSync(codePath, 'utf-8');
+      if (!code.includes("isContainerFrame: (node.type === 'FRAME'")) {
+        try {
+          const mainCode = execSync('git show main:code.js', { encoding: 'utf-8' });
+          fs.writeFileSync(codePath, mainCode, 'utf-8');
+        } catch (e) {}
+      }
+      const uiPath = path.join(rootDir, 'ui.html');
+      let ui = fs.readFileSync(uiPath, 'utf-8');
+      if (!ui.includes('ALPHA_NOISE_THRESHOLD = 15')) {
+        try {
+          const mainUI = execSync('git show main:ui.html', { encoding: 'utf-8' });
+          fs.writeFileSync(uiPath, mainUI, 'utf-8');
+        } catch (e) {}
+      }
+    }
   }
 ];
 
@@ -308,6 +335,17 @@ function executeRelease(rel) {
     env: { ...process.env, PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:' + (process.env.PATH || '') }
   };
 
+  let stashedFor107 = false;
+  if (rel.version === '1.0.7') {
+    try {
+      const st = execSync(`git status --porcelain code.js`, execPipe).toString();
+      if (st.trim().length > 0) {
+        execSync(`git stash push -m "crop-fix-v1.0.8" code.js ui.html`, execOptions);
+        stashedFor107 = true;
+      }
+    } catch (e) {}
+  }
+
   // --- STEP 1: Main branch (walkyufeng) ---
   console.log(`--- [1/2] Processing walkyufeng (branch: main) ---`);
   execSync(`git checkout main`, execOptions);
@@ -390,6 +428,12 @@ function executeRelease(rel) {
     execSync(`node scripts/switch-account.js walkyufeng`, execOptions);
     execSync(`git config user.name "walkyufeng-hue"`, execOptions);
     execSync(`git config user.email "walkyufeng@gmail.com"`, execOptions);
+    if (stashedFor107) {
+      try {
+        execSync(`git stash pop`, execOptions);
+        console.log(`📦 Restored crop fix for local workspace.`);
+      } catch (e) {}
+    }
   }
 
   const state = loadState();
