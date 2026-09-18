@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v1.0.7-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+[![Version](https://img.shields.io/badge/version-v1.0.8-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
 [![Website](https://img.shields.io/badge/website-figma--volcbox.pages.dev-orange.svg?style=flat-square)](https://figma-volcbox.pages.dev)
 [![Figma](https://img.shields.io/badge/Figma-Plugin_API-F24E1E?style=flat-square&logo=figma&logoColor=white)](https://www.figma.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.0.7.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.0.8.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -27,12 +27,15 @@
 
 ---
 
-## 📢 最近更新 · v1.0.7 版本动态
+## 📢 最近更新 · v1.0.8 版本动态
 
-> 💡 **双手无需在鼠标和键盘之间频繁来回切换，高频操作一气呵成。**
+> 💡 **从 3D 软件或 AI 工具导出的带微光、阴影渐变透明图层，不再误报“已贴边”，一键精准贴合图形真实边缘，对齐排版不偏位。**
 
 | 模块 | 🎯 更新亮点 | ⚡ 实际设计收益 |
 | :--- | :--- | :--- |
+| ✂️ 裁切透明边缘 | **自适应抗噪裁切引擎，一键剔除 3D 渲染与设计图层多余透明留白**<br>重构边缘像素扫描算法，引入自适应抗噪与行/列像素密度校验，彻底解决带微弱半透明光晕时裁切误判失效的问题；全面支持多图层同时批量裁切与画板安全自适应缩放。 | 从 3D 软件或 AI 工具导出的带微光、阴影渐变透明图层，不再误报“已贴边”，一键精准贴合图形真实边缘，对齐排版不偏位。 |
+
+--- | :--- | :--- |
 | ⚡ 快捷交互 | **桌面级全局快捷键（ESC 关闭、⌘+Enter 执行）**<br>为插件窗口注入全局键盘事件监听。按下 ESC 键即可快捷关闭词库弹窗或设置面板，按下 ⌘+Enter（Win 下 Ctrl+Enter）快速触发当前主功能。 | 双手无需在鼠标和键盘之间频繁来回切换，高频操作一气呵成。 |
 
 --- | :--- | :--- |
@@ -77,7 +80,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.0.7.zip](https://figma-volcbox.pages.dev/VolcBox_v1.0.7.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.0.8.zip](https://figma-volcbox.pages.dev/VolcBox_v1.0.8.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：

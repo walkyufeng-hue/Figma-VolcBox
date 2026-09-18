@@ -1,6 +1,6 @@
 {
   "name": "VolcBox",
-  "id": "volcbox",
+  "id": "1682690249663337849",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
@@ -12,6 +12,6 @@
     "allowedDomains": [
       "*"
     ],
-    "reasoning": "VolcBox requires network access to communicate with AI translation providers (including user-configured custom AI endpoints like OpenAI and DeepSeek), Cloudflare cloud sync, and TinyPNG image compression services."
+    "reasoning": "VolcBox requires network access for TinyPNG image compression, cloud sync of designer presets, and dictionary localization services."
   }
 }
