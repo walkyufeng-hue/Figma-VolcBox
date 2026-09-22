@@ -2794,144 +2794,6 @@ const Handlers = {
     }
   },
 
-  'artboards/render-composite-for-local': async (requestId, payload) => {
-    const selection = figma.currentPage.selection;
-    if (!selection || selection.length === 0) {
-      figma.notify('请先选中需要拼图的画板或图层', { error: true });
-      sendToUI({
-        type: 'task/failed',
-        requestId,
-        payload: { taskId: requestId, error: { message: '未选中图层' } },
-      });
-      return;
-    }
-
-    figma.notify('⏳ 正在导出并合成拼图...', { timeout: 1500 });
-
-    try {
-      const rows = LayoutEngine.groupByCanvasRows(selection);
-      const rowsPayload = [];
-
-      for (const row of rows) {
-        const rowItems = [];
-        for (const node of row) {
-          // Dynamic safe scaling to prevent browser/clipboard canvas memory overflow on huge artboards
-          const maxDim = Math.max(node.width, node.height);
-          const safeScale = maxDim > 3000 ? 1 : (maxDim > 1800 ? 1.5 : 2);
-          const bytes = await node.exportAsync({
-            format: 'PNG',
-            constraint: { type: 'SCALE', value: safeScale }
-          });
-          rowItems.push({
-            name: node.name,
-            width: Math.round(node.width * safeScale),
-            height: Math.round(node.height * safeScale),
-            bytes
-          });
-        }
-        rowsPayload.push(rowItems);
-      }
-
-      sendToUI({
-        type: 'artboards/do-local-image-clipboard',
-        requestId,
-        payload: { rows: rowsPayload, withTitles: true }
-      });
-    } catch (err) {
-      console.error('[Render Composite For Local Error]', err);
-      figma.notify('导出画板失败: ' + err.message, { error: true });
-    }
-  },
-
-  'artboards/export-files-for-local': async (requestId) => {
-    const selection = figma.currentPage.selection;
-    if (!selection || selection.length === 0) {
-      figma.notify('请先选中需要复制的画板或图层', { error: true });
-      sendToUI({
-        type: 'task/failed',
-        requestId,
-        payload: { taskId: requestId, error: { message: '未选中图层' } },
-      });
-      return;
-    }
-
-    figma.notify('⏳ 正在导出画板文件...', { timeout: 1500 });
-
-    try {
-      const sortedNodes = LayoutEngine.sortByVisualOrder(selection);
-
-      const files = [];
-      for (let i = 0; i < sortedNodes.length; i++) {
-        const node = sortedNodes[i];
-        const bytes = await node.exportAsync({
-          format: 'PNG',
-          constraint: { type: 'SCALE', value: 2 }
-        });
-        const safeName = (node.name || `Artboard_${i + 1}`).replace(/[\\/:*?"<>|]/g, '_');
-        files.push({
-          name: safeName,
-          bytes
-        });
-      }
-
-      sendToUI({
-        type: 'artboards/do-local-files-clipboard',
-        requestId,
-        payload: { files }
-      });
-    } catch (err) {
-      console.error('[Export Files For Local Error]', err);
-      figma.notify('导出画板失败: ' + err.message, { error: true });
-    }
-  },
-
-  'export/export-selected-artboards': async (requestId) => {
-    const selection = figma.currentPage.selection;
-    if (!selection || selection.length === 0) {
-      figma.notify('请先选中需要导出的画板或图层', { error: true });
-      sendToUI({
-        type: 'task/failed',
-        requestId,
-        payload: { taskId: requestId, error: { message: '未选中图层' } },
-      });
-      return;
-    }
-
-    figma.notify('⏳ 正在导出所选画板...', { timeout: 1500 });
-
-    try {
-      const sortedNodes = LayoutEngine.sortByVisualOrder(selection);
-
-      const items = [];
-      for (let i = 0; i < sortedNodes.length; i++) {
-        const node = sortedNodes[i];
-        const bytes = await node.exportAsync({
-          format: 'PNG',
-          constraint: { type: 'SCALE', value: 2 }
-        });
-        const safeName = (node.name || `Artboard_${i + 1}`).replace(/[\\/:*?"<>|]/g, '_');
-        items.push({
-          name: safeName,
-          format: 'PNG',
-          bytes
-        });
-      }
-
-      sendToUI({
-        type: 'export/completed-artboards',
-        requestId,
-        payload: {
-          items,
-          zipName: `所选画板切图_${items.length}张`
-        }
-      });
-      figma.notify(`✅ 成功导出 ${items.length} 个画板切图`);
-    } catch (err) {
-      console.error('[Export Selected Artboards Error]', err);
-      figma.notify('批量导出失败: ' + err.message, { error: true });
-    }
-  },
-
   'color/preview': async (requestId, payload) => {
     const { hue = 0, saturation = 0, lightness = 0, scope = 'all', protectNeutrals = true, version = 0 } = payload || {};
     if (version > 0 && version < currentColorVersion) {
@@ -3219,14 +3081,13 @@ const Handlers = {
     figma.viewport.scrollAndZoomIntoView([container]);
     const fitZoom = figma.viewport.zoom;
 
-    // 缩放到舒适全景比例（缩放至 78%，上限不超过 1.0），确保四周有充裕视野空间
     const comfortableZoom = Math.min(fitZoom * 0.78, 1.0);
     figma.viewport.zoom = comfortableZoom;
 
     // 2. 避免被 420px 宽度的插件面板遮挡：向右平移至清晰的可见区域
     const containerCenterX = container.x + container.width / 2;
     const containerCenterY = container.y + container.height / 2;
-    const offsetScreenPx = 220; // 对应 420px 插件面板的一半及安全边距
+    const offsetScreenPx = 220;
     figma.viewport.center = {
       x: containerCenterX - (offsetScreenPx / comfortableZoom),
       y: containerCenterY

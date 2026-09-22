@@ -285,12 +285,12 @@ const MockupViews = {
 
       <div class="mockup-setting-group">
         <div class="mockup-setting-row">
-          <span style="font-size: 11.5px; font-weight: 500;">画布生成拼图（带标题）</span>
-          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">生成</button>
+          <span style="font-size: 11.5px; font-weight: 500;">本地图片批量导入（保留原名）</span>
+          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">导入</button>
         </div>
         <div class="mockup-setting-row">
-          <span style="font-size: 11.5px; font-weight: 500;">批量导出所选画板</span>
-          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">复制</button>
+          <span style="font-size: 11.5px; font-weight: 500;">画布生成拼图（带标题）</span>
+          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">生成</button>
         </div>
         <div class="mockup-setting-row">
           <span style="font-size: 11.5px; font-weight: 500;">文本固定行高转auto</span>

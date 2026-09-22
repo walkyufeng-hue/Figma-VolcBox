@@ -1,0 +1,21 @@
+{
+  "name": "VolcBox",
+  "id": "1682690249663337849",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": [
+    "figma"
+  ],
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://api.walkyufeng.xyz",
+      "https://api.restful-api.dev",
+      "https://translate.googleapis.com",
+      "https://clients5.google.com",
+      "https://api.mymemory.translated.net"
+    ],
+    "reasoning": "VolcBox requires network access for TinyPNG image compression, cloud sync of designer presets, and dictionary localization services."
+  }
+}

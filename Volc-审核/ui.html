@@ -1473,7 +1473,6 @@
       saturation: 0,
       lightness: 0,
       selection: { totalSelected: 0, textNodeCount: 0, colorLayerCount: 0 },
-      hasLocalService: false,
       importImages: {
         files: [],
         cols: 5,
@@ -1558,34 +1557,6 @@
           }
         }
       }, '*');
-    }
-
-    // Auto-detect local clipboard assistant service
-    async function checkLocalService() {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 400);
-        const res = await fetch('http://127.0.0.1:3055/api/health', {
-          method: 'GET',
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status === 'ok') {
-            if (!state.hasLocalService) {
-              state.hasLocalService = true;
-              render();
-            }
-            return true;
-          }
-        }
-      } catch (e) {}
-      if (state.hasLocalService) {
-        state.hasLocalService = false;
-        render();
-      }
-      return false;
     }
 
     // Language helper functions
@@ -2479,30 +2450,8 @@
 
       // 5. TOOLS VIEW
       tools() {
-        const hasLocal = state.hasLocalService;
         return `
           <div class="section-header" style="padding-top: 2px;">
-            <span class="section-title">本地服务助手</span>
-          </div>
-
-          <div class="setting-group">
-            <div class="setting-row">
-              <span class="setting-label">本地直拷服务</span>
-              ${hasLocal ? `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="uninstallLocalService()">卸载</span>
-                  <span style="font-size: 11px; color: var(--accent-green); font-weight: 600;">● 极速直拷已开启</span>
-                </div>
-              ` : `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 11px; color: var(--text-muted);">未开启</span>
-                  <span style="font-size: 11px; color: var(--accent-red); font-weight: 600; cursor: pointer; text-decoration: underline;" onclick="downloadHelperInstaller()">安装</span>
-                </div>
-              `}
-            </div>
-          </div>
-
-          <div class="section-header" style="padding-top: 4px;">
             <span class="section-title">本地图片批量导入</span>
           </div>
 
@@ -2580,15 +2529,7 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-sub); flex-shrink: 0;"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                 <span class="setting-label" style="font-weight: 600;">画布生成拼图（带标题）</span>
               </div>
-              <button class="btn btn-primary" style="height: 26px; padding: 0 12px; font-size: 11.5px;" onclick="executeCollage()" ${state.selection.totalSelected === 0 ? 'disabled' : ''}>${hasLocal ? '复制' : '生成'}</button>
-            </div>
-
-            <div class="setting-row">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-sub); flex-shrink: 0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span class="setting-label" style="font-weight: 600;">批量导出所选画板</span>
-              </div>
-              <button class="btn btn-primary" style="height: 26px; padding: 0 12px; font-size: 11.5px;" onclick="executeBatchExport()" ${(!hasLocal || state.selection.totalSelected === 0) ? 'disabled' : ''} ${!hasLocal ? 'title="需安装并开启本地助手服务"' : ''}>复制</button>
+              <button class="btn btn-primary" style="height: 26px; padding: 0 12px; font-size: 11.5px;" onclick="executeCollage()" ${state.selection.totalSelected === 0 ? 'disabled' : ''}>生成</button>
             </div>
 
             <div class="setting-row">
@@ -2840,14 +2781,17 @@
     document.querySelectorAll('#keypad .tactile-key').forEach(btn => {
       btn.addEventListener('click', () => {
         state.activeTab = btn.getAttribute('data-tab');
-        if (state.activeTab === 'tools') {
-          checkLocalService();
-        }
         if (state.activeTab === 'compress') {
           refreshCompressQuotas(false);
         }
         render();
       });
+    });
+
+    window.addEventListener('resize', () => {
+      if (state.activeTab === 'fill' && window.updateLineNumbers) {
+        window.updateLineNumbers();
+      }
     });
 
     // Batch Image Import methods
@@ -3029,8 +2973,6 @@
         for (let i = 0; i < cfg.files.length; i++) {
           const f = cfg.files[i];
           try {
-            cfg.progress = { current: i + 1, total: cfg.files.length, percent: Math.round(((i + 1) / cfg.files.length) * 85), name: f.name };
-            render();
             const item = await processSelectedImage(f, stripExt);
             processedItems.push(item);
           } catch (err) {
@@ -3067,190 +3009,7 @@
     };
 
     window.executeCollage = async function() {
-      if (state.hasLocalService) {
-        sendAction('artboards/render-composite-for-local', {});
-      } else {
-        sendAction('artboards/create-canvas-composite', { withTitles: true });
-      }
-    };
-
-    window.executeBatchExport = async function() {
-      if (state.hasLocalService) {
-        sendAction('artboards/export-files-for-local', {});
-      } else {
-        sendAction('export/export-selected-artboards', {});
-      }
-    };
-
-    window.downloadHelperInstaller = async function() {
-      const scriptContent = `#!/bin/bash
-# ==========================================
-# VolcBox Mac 剪贴板极速助手 Launcher
-# ==========================================
-
-DIR="$(cd "$(dirname "$0")" && pwd)"
-HELPER_DIR="$HOME/.volcbox-helper"
-HELPER_SCRIPT=""
-
-# 1. Check if server.js exists in current folder or known plugin directory
-if [ -f "$DIR/server.js" ]; then
-  HELPER_SCRIPT="$DIR/server.js"
-elif [ -f "/Users/haifeng/Desktop/Volc AI/Figma插件/VolcBox重构版/server.js" ]; then
-  HELPER_SCRIPT="/Users/haifeng/Desktop/Volc AI/Figma插件/VolcBox重构版/server.js"
-else
-  mkdir -p "$HELPER_DIR"
-  HELPER_SCRIPT="$HELPER_DIR/server.js"
-  cat << 'EOF' > "$HELPER_SCRIPT"
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const { exec } = require('child_process');
-
-const PORT = 3055;
-const TEMP_DIR = path.join(os.tmpdir(), 'volcbox_clipboard');
-if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
-
-function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-}
-
-const server = http.createServer((req, res) => {
-  setCorsHeaders(res);
-  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
-  
-  if (req.method === 'GET' && req.url === '/api/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', platform: os.platform() }));
-    return;
-  }
-
-  if (req.method === 'POST' && req.url === '/api/clipboard/write-image') {
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
-      try {
-        const { imageBase64 } = JSON.parse(body);
-        const buffer = Buffer.from(imageBase64.replace(/^data:image\\/\\w+;base64,/, ''), 'base64');
-        const tempPath = path.join(TEMP_DIR, \`composite_\${Date.now()}.png\`);
-        fs.writeFileSync(tempPath, buffer);
-        const jxa = \`ObjC.import('AppKit'); var pb = $.NSPasteboard.generalPasteboard; pb.clearContents; var imgData = $.NSData.dataWithContentsOfFile('\${tempPath}'); if (imgData) { pb.setDataForType(imgData, $.NSPasteboardTypePNG); }\`;
-        exec(\`osascript -l JavaScript -e "\${jxa}"\`, (err) => {
-          if (err) { res.writeHead(500); res.end(JSON.stringify({ error: err.message })); }
-          else { res.writeHead(200); res.end(JSON.stringify({ success: true })); }
-        });
-      } catch(e) { res.writeHead(500); res.end(JSON.stringify({ error: e.message })); }
-    });
-    return;
-  }
-
-  if (req.method === 'POST' && req.url === '/api/clipboard/write-files') {
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
-      try {
-        const { files } = JSON.parse(body);
-        const writtenPaths = [];
-        for (let i = 0; i < files.length; i++) {
-          const f = files[i];
-          const buffer = Buffer.from(f.base64.replace(/^data:image\\/\\w+;base64,/, ''), 'base64');
-          const safeName = (f.name || \`artboard_\${i+1}\`).replace(/[\\\\/:*?"<>|]/g, '_');
-          const p = path.join(TEMP_DIR, \`\${i+1}_\${safeName}.png\`);
-          fs.writeFileSync(p, buffer);
-          writtenPaths.push(p);
-        }
-        const jxaItems = writtenPaths.map(p => {
-          const escaped = p.replace(/"/g, '\\\\"');
-          return \`var item = $.NSPasteboardItem.alloc.init; var fileUrl = $.NSURL.fileURLWithPath("\${escaped}"); item.setStringForType(fileUrl.absoluteString, "public.file-url"); items.addObject(item); filenames.addObject($("\${escaped}"));\`;
-        }).join(' ');
-        const jxa = \`ObjC.import('AppKit'); var pb = $.NSPasteboard.generalPasteboard; pb.clearContents; var items = $.NSMutableArray.array; var filenames = $.NSMutableArray.array; \${jxaItems} pb.writeObjects(items); pb.setPropertyListForType(filenames, "NSFilenamesPboardType");\`;
-        exec(\`osascript -l JavaScript -e '\${jxa.replace(/'/g, "'\\\\''")}'\`, (err) => {
-          if (err) { res.writeHead(500); res.end(JSON.stringify({ error: err.message })); }
-          else { res.writeHead(200); res.end(JSON.stringify({ success: true, count: writtenPaths.length })); }
-        });
-      } catch(e) { res.writeHead(500); res.end(JSON.stringify({ error: e.message })); }
-    });
-    return;
-  }
-  res.writeHead(404); res.end();
-});
-
-server.listen(PORT, '127.0.0.1');
-EOF
-fi
-
-# Find node path
-NODE_PATH=$(which node 2>/dev/null || echo "/usr/local/bin/node")
-if [ ! -f "$NODE_PATH" ]; then
-  if [ -f "/opt/homebrew/bin/node" ]; then
-    NODE_PATH="/opt/homebrew/bin/node"
-  fi
-fi
-
-kill $(lsof -t -i:3055) 2>/dev/null
-nohup "$NODE_PATH" "$HELPER_SCRIPT" > /dev/null 2>&1 &
-
-echo "=========================================="
-echo "🎉 VolcBox 剪贴板助手已成功启动！"
-echo "📂 服务路径: $HELPER_SCRIPT"
-echo "👉 请返回 Figma 插件，极速直拷模式已自动点亮！"
-echo "=========================================="
-`;
-
-      try {
-        const zip = new JSZip();
-        // Give 755 (rwxr-xr-x) UNIX execution permissions so macOS double click runs directly
-        zip.file('VolcBox助手启动.command', scriptContent, {
-          unixPermissions: '755'
-        });
-
-        const zipBlob = await zip.generateAsync({
-          type: 'blob',
-          platform: 'UNIX'
-        });
-
-        const url = URL.createObjectURL(zipBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'VolcBox助手_解压双击运行.zip';
-        a.click();
-        URL.revokeObjectURL(url);
-
-        parent.postMessage({
-          pluginMessage: {
-            type: 'toast',
-            payload: '📥 助手压缩包已下载，解压后双击运行即可点亮！'
-          }
-        }, '*');
-      } catch (err) {
-        console.error('[Download Helper Error]', err);
-        // Fallback to command file
-        const blob = new Blob([scriptContent], { type: 'text/x-sh' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'VolcBox助手启动.command';
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    };
-
-    window.uninstallLocalService = async function() {
-      try {
-        await fetch('http://127.0.0.1:3055/api/service/uninstall', {
-          method: 'POST'
-        });
-      } catch (e) {}
-      state.hasLocalService = false;
-      render();
-      parent.postMessage({
-        pluginMessage: {
-          type: 'toast',
-          payload: '🗑️ 本地助手服务已成功卸载并停止运行'
-        }
-      }, '*');
+      sendAction('artboards/create-canvas-composite', { withTitles: true });
     };
 
     // Translation methods
@@ -5305,186 +5064,6 @@ Strict formatting and tag integrity rules:
         }
       },
 
-      async 'export/completed-artboards'(payload) {
-        const { items, zipName } = payload || {};
-        if (!items || items.length === 0) return;
-
-        try {
-          if (items.length === 1) {
-            const blob = new Blob([new Uint8Array(items[0].bytes)], { type: 'image/png' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${items[0].name}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          } else {
-            const zip = new JSZip();
-            for (const item of items) {
-              zip.file(`${item.name}.png`, item.bytes);
-            }
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const url = window.URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${zipName || '所选画板切图'}.zip`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-          }
-        } catch (e) {
-          console.error('[Download Artboards Error]', e);
-        }
-      },
-
-      async 'artboards/do-local-image-clipboard'(payload) {
-        const { rows, images, withTitles } = payload || {};
-        const imageRows = rows || (images ? [images] : []);
-        if (!imageRows || imageRows.length === 0) return;
-
-        try {
-          const loadedRows = await Promise.all(
-            imageRows.map(row => Promise.all(
-              row.map(item => new Promise((resolve, reject) => {
-                const blob = new Blob([item.bytes], { type: 'image/png' });
-                const url = URL.createObjectURL(blob);
-                const img = new Image();
-                img.onload = () => resolve({ img, name: item.name, width: item.width, height: item.height, url });
-                img.onerror = reject;
-                img.src = url;
-              }))
-            ))
-          );
-
-          const titleHeight = withTitles ? 40 : 0;
-          const gap = 36;
-          const pad = 40;
-
-          const rowWidths = loadedRows.map(row => {
-            const totalImgsW = row.reduce((sum, item) => sum + item.width, 0);
-            return totalImgsW + (row.length - 1) * gap;
-          });
-          const rowHeights = loadedRows.map(row => {
-            const maxH = Math.max(...row.map(item => item.height));
-            return maxH + titleHeight;
-          });
-
-          const maxRowWidth = Math.max(...rowWidths);
-          const totalWidth = maxRowWidth + pad * 2;
-          const totalHeight = rowHeights.reduce((sum, h) => sum + h, 0) + (loadedRows.length - 1) * gap + pad * 2;
-
-          const canvas = document.createElement('canvas');
-          canvas.width = totalWidth;
-          canvas.height = totalHeight;
-          const ctx = canvas.getContext('2d');
-
-          ctx.fillStyle = '#F4F4F5';
-          ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-          let curY = pad;
-          for (let r = 0; r < loadedRows.length; r++) {
-            const row = loadedRows[r];
-            let curX = pad;
-
-            for (let i = 0; i < row.length; i++) {
-              const imgItem = row[i];
-              const x = curX;
-              const y = curY;
-
-              if (withTitles) {
-                ctx.fillStyle = '#18181B';
-                ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(imgItem.name, x, y + 16);
-              }
-
-              const imgY = y + titleHeight;
-
-              ctx.save();
-              ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
-              ctx.shadowBlur = 16;
-              ctx.shadowOffsetY = 6;
-              ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(x, imgY, imgItem.width, imgItem.height);
-              ctx.restore();
-
-              ctx.drawImage(imgItem.img, x, imgY, imgItem.width, imgItem.height);
-
-              ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-              ctx.lineWidth = 1;
-              ctx.strokeRect(x, imgY, imgItem.width, imgItem.height);
-
-              curX += imgItem.width + gap;
-            }
-
-            curY += rowHeights[r] + gap;
-          }
-
-          loadedRows.flat().forEach(i => URL.revokeObjectURL(i.url));
-
-          const dataUrl = canvas.toDataURL('image/png');
-
-          const response = await fetch('http://127.0.0.1:3055/api/clipboard/write-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageBase64: dataUrl })
-          });
-
-          if (response.ok) {
-            parent.postMessage({ pluginMessage: { type: 'toast', payload: '📋 拼图大图已直接复制到剪贴板，去微信按 ⌘+V 即可粘贴发送！' } }, '*');
-          } else {
-            throw new Error('Local helper error');
-          }
-        } catch (err) {
-          console.error('[Local Collage Error]', err);
-          parent.postMessage({ pluginMessage: { type: 'toast', payload: '复制失败，请确认本地服务已启动', error: true } }, '*');
-        }
-      },
-
-      async 'artboards/do-local-files-clipboard'(payload) {
-        const { files } = payload || {};
-        if (!files || files.length === 0) return;
-
-        try {
-          const filesPayload = await Promise.all(
-            files.map(f => new Promise((resolve) => {
-              const blob = new Blob([new Uint8Array(f.bytes)], { type: 'image/png' });
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                resolve({
-                  name: f.name,
-                  base64: reader.result
-                });
-              };
-              reader.readAsDataURL(blob);
-            }))
-          );
-
-          const response = await fetch('http://127.0.0.1:3055/api/clipboard/write-files', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: filesPayload })
-          });
-
-          if (response.ok) {
-            parent.postMessage({
-              pluginMessage: {
-                type: 'toast',
-                payload: `📋 ${files.length} 张单图已直接复制到剪贴板，去微信按 ⌘+V 可一次性发出 ${files.length} 条消息！`
-              }
-            }, '*');
-          } else {
-            throw new Error('Local helper error');
-          }
-        } catch (err) {
-          console.error('[Local Files Error]', err);
-          parent.postMessage({ pluginMessage: { type: 'toast', payload: '多图复制失败，请确认本地服务已启动', error: true } }, '*');
-        }
-      },
-
       'account/sync-status-updated'(payload) {
         const { success, settings, cloudSync, message, error } = payload || {};
         if (success) {
@@ -5574,12 +5153,9 @@ Strict formatting and tag integrity rules:
       }
     });
 
-    // Initial render & local service check
+    // Initial render
     render();
-    checkLocalService();
-    setInterval(checkLocalService, 3000);
     parent.postMessage({ pluginMessage: { type: 'selection/request', payload: {} } }, '*');
-  </script>
 
     // Global Keyboard Shortcuts (ESC & Cmd/Ctrl+Enter)
     window.addEventListener('keydown', (e) => {
@@ -5592,5 +5168,6 @@ Strict formatting and tag integrity rules:
         if (primaryBtn) primaryBtn.click();
       }
     });
+  </script>
 </body>
 </html>
