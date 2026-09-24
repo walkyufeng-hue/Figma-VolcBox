@@ -543,6 +543,8 @@ const SelectionEngine = {
         count: item.score
       }));
 
+    const detectedScenario = this.inferScenario(selection);
+
     return {
       totalSelected: selection.length,
       artboardCount,
@@ -553,8 +555,95 @@ const SelectionEngine = {
       canSaveStyle: selection.length === 1 && colorLayerCount > 0,
       detectedSourceLanguage: 'auto',
       detectedSourceLanguageName: '自动检测',
+      detectedScenario,
       nodeIds: selection.map((n) => n.id),
     };
+  },
+
+  inferScenario(selection) {
+    if (!selection || selection.length === 0) return 'general';
+    let textsCombined = '';
+    let namesCombined = '';
+    let count = 0;
+
+    function extractMetadata(node) {
+      if (count > 100) return;
+      count++;
+      namesCombined += ' ' + (node.name || '');
+      if (node.type === 'TEXT' && node.characters) {
+        textsCombined += ' ' + node.characters.slice(0, 100);
+      }
+      if ('children' in node && Array.isArray(node.children)) {
+        for (const child of node.children) {
+          extractMetadata(child);
+        }
+      }
+    }
+
+    for (const node of selection) {
+      extractMetadata(node);
+      let p = node.parent;
+      while (p && p.type !== 'PAGE') {
+        namesCombined += ' ' + (p.name || '');
+        p = p.parent;
+      }
+    }
+
+    const corpus = (namesCombined + ' ' + textsCombined).toLowerCase();
+
+    const patterns = {
+      ecommerce: [
+        /\b(?:cart|shopping|checkout|sku|product|goods|price|prices|order|orders|discount|coupon|coupons|shipping|store|shop|buy|purchase|sale|deal|deals|voucher|subtotal|refund|commodity)\b/g,
+        /(?:商城|电商|商品|购物车|去结算|立即结算|立即下单|下单|包邮|免运费|优惠券|立省|实付|原价|零售|退款|有货|已售罄)/g
+      ],
+      saas: [
+        /\b(?:dashboard|admin|console|tenant|tenants|workspace|workspaces|permission|permissions|rbac|manage|metric|metrics|analytics|table|workflow|audit|log|logs|quota|billing|config|setting|settings|role|roles|overview|chart|integration|integrations|webhook|webhooks)\b/g,
+        /(?:控制台|后台|工作区|权限|租户|看板|数据看板|工作流|审批|数据源|审计|审计日志|账单|配额|实例)/g
+      ],
+      social: [
+        /\b(?:feed|feeds|post|posts|tweet|tweets|story|stories|comment|comments|like|likes|follow|following|follower|followers|chat|message|messages|inbox|profile|friend|friends|share|community|moment|moments|timeline|channel|subscribe)\b/g,
+        /(?:动态|信息流|帖子|私信|点赞|关注|已关注|粉丝|群聊|朋友圈|社区|发帖|评论)/g
+      ],
+      fintech: [
+        /\b(?:wallet|wallets|token|tokens|crypto|defi|stake|staking|unstake|apr|apy|swap|transfer|deposit|withdraw|balance|fiat|usdt|btc|eth|gas|slippage|tx|portfolio|fund|invest)\b/g,
+        /(?:质押|质押生息|钱包|年化|充提|充币|提币|转账|收益|滑点|理财|资产|合约|闪兑)/g
+      ],
+      gaming: [
+        /\b(?:quest|quests|mission|missions|inventory|hero|heroes|weapon|weapons|level|exp|rank|ranking|leaderboard|pvp|pve|guild|battle|stage|dungeon|reward|rewards|gem|gems|gold|energy|stamina|boss|equipment)\b/g,
+        /(?:关卡|副本|主线任务|英雄|装备|背包|战力|段位|排行榜|体力|工会|战队|任务)/g
+      ]
+    };
+
+    const scores = {
+      ecommerce: 0,
+      saas: 0,
+      social: 0,
+      fintech: 0,
+      gaming: 0
+    };
+
+    for (const [sc, regexList] of Object.entries(patterns)) {
+      for (const rx of regexList) {
+        const matches = corpus.match(rx);
+        if (matches) {
+          scores[sc] += matches.length * 2;
+        }
+      }
+    }
+
+    if (/[$€£¥]\s*\d+|\d+%\s*off/i.test(corpus)) {
+      scores.ecommerce += 3;
+    }
+
+    let topScenario = 'general';
+    let maxScore = 0;
+    for (const [key, val] of Object.entries(scores)) {
+      if (val > maxScore) {
+        maxScore = val;
+        topScenario = key;
+      }
+    }
+    return maxScore >= 2 ? topScenario : 'general';
   },
 
   getTextNodes(nodes, filterEmpty = false) {
@@ -1995,7 +2084,7 @@ const Handlers = {
   // Flow: code.js collects texts → sends to UI → UI fetches translation → sends back → code.js writes.
 
   'translation/start': async (requestId, payload) => {
-    const { targetLanguage = 'en', preserveRichText = false } = payload || {};
+    const { targetLanguage = 'en', preserveRichText = false, scenario = 'auto', compactUiWidth = true, simplifyText = true } = payload || {};
     const textNodes = SelectionEngine.getTextNodes(null, true);
 
     if (textNodes.length === 0) {
@@ -2008,7 +2097,7 @@ const Handlers = {
       return;
     }
 
-    // 1. Collect unique texts with node mapping and optional tagging
+    // 1. Collect unique texts with node mapping, frame name and optional tagging
     const nodeTexts = textNodes.map((n) => {
       let text = n.characters;
       let richStyles = null;
@@ -2017,8 +2106,19 @@ const Handlers = {
         text = extracted.taggedText;
         richStyles = extracted.styles;
       }
-      return { id: n.id, text, richStyles };
+      let frameName = '';
+      let p = n.parent;
+      while (p && p.type !== 'PAGE') {
+        if (p.type === 'FRAME' || p.type === 'SECTION' || p.type === 'COMPONENT') {
+          frameName = p.name || '';
+          break;
+        }
+        p = p.parent;
+      }
+      return { id: n.id, text, richStyles, frameName, layerName: n.name || '' };
     });
+
+    const detectedScenario = SelectionEngine.inferScenario(figma.currentPage.selection);
 
     // 2. Send to UI for translation (UI has network access)
     sendToUI({
@@ -2028,6 +2128,10 @@ const Handlers = {
         targetLanguage,
         nodeTexts,
         preserveRichText,
+        scenario,
+        detectedScenario,
+        simplifyText: (simplifyText !== false && compactUiWidth !== false),
+        compactUiWidth: (simplifyText !== false && compactUiWidth !== false)
       },
     });
     // UI will call back with 'translation/apply-results'
@@ -2126,7 +2230,7 @@ const Handlers = {
   },
 
   'translation/frame-scheme-run': async (requestId, payload) => {
-    const { scheme, preserveRichText } = payload || {};
+    const { scheme, preserveRichText, compactUiWidth = true, simplifyText = true } = payload || {};
     const selection = figma.currentPage.selection;
     const targets = selection.filter(n => n.type === 'FRAME' || n.type === 'SECTION' || n.type === 'COMPONENT' || n.type === 'GROUP' || n.type === 'TEXT');
 
@@ -2196,10 +2300,18 @@ const Handlers = {
     }
 
     figma.notify('⚡️ 正在生成并翻译多语言画板矩阵...');
+    const detectedScenario = SelectionEngine.inferScenario(selection);
     sendToUI({
       type: 'translation/do-scheme-translate',
       requestId,
-      payload: { batches, preserveRichText }
+      payload: {
+        batches,
+        preserveRichText,
+        scenario: scheme.scenario || 'auto',
+        detectedScenario,
+        simplifyText: (simplifyText !== false && compactUiWidth !== false),
+        compactUiWidth: (simplifyText !== false && compactUiWidth !== false)
+      }
     });
   },
 

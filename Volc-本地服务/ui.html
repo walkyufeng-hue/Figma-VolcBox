@@ -1362,7 +1362,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
-      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.0.9</span></div>
+      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.0</span></div>
     </footer>
   </div>
 
@@ -1457,6 +1457,8 @@
       activeTab: 'translate',
       targetLanguage: 'en',
       translateMode: 'text',
+      simplifyText: true,
+      compactUiWidth: true,
       protectText: true,
       preserveRichText: true,
       smartCasing: true,
@@ -1537,6 +1539,8 @@
       state.settings.translation.pinnedLanguageCodes = state.pinnedCodes;
       state.settings.translation.targetLanguage = state.targetLanguage;
       state.settings.translation.translateMode = state.translateMode;
+      state.settings.translation.simplifyText = state.simplifyText !== false;
+      state.settings.translation.compactUiWidth = state.simplifyText !== false;
       state.settings.translation.protectText = state.protectText;
       state.settings.translation.preserveRichText = state.preserveRichText;
       state.settings.translation.smartCasing = state.smartCasing;
@@ -1994,6 +1998,11 @@
               '智能大小写规范',
               '单词首字母大写 · 句子首字母及专有名词规范',
               UIComponents.Switch(state.smartCasing !== false, 'toggleSmartCasing(this.checked)')
+            ) +
+            UIComponents.SettingRow(
+              '算法简化',
+              '去除冗余修饰与虚词 · 智能浓缩为 1~2 词极简微文案，彻底防爆框',
+              UIComponents.Switch(state.simplifyText !== false, 'toggleSimplifyText(this.checked)')
             ),
             'margin-top: 4px;'
           )}
@@ -3264,6 +3273,14 @@ echo "=========================================="
       savePluginState();
       render();
     };
+    window.toggleSimplifyText = function(checked) {
+      state.simplifyText = typeof checked === 'boolean' ? checked : !state.simplifyText;
+      state.compactUiWidth = state.simplifyText;
+      savePluginState();
+      render();
+    };
+    window.toggleCompactUiWidth = window.toggleSimplifyText;
+
     window.toggleProtectText = function(checked) {
       state.protectText = typeof checked === 'boolean' ? checked : !state.protectText;
       savePluginState();
@@ -3290,7 +3307,9 @@ echo "=========================================="
             payload: {
               targetLanguage: state.targetLanguage,
               protectText: state.protectText,
-              preserveRichText: state.preserveRichText
+              preserveRichText: state.preserveRichText,
+              simplifyText: state.simplifyText !== false,
+              compactUiWidth: state.simplifyText !== false
             }
           }
         }, '*');
@@ -3298,7 +3317,10 @@ echo "=========================================="
         parent.postMessage({
           pluginMessage: {
             type: 'translation/frame-start',
-            payload: {}
+            payload: {
+              simplifyText: state.simplifyText !== false,
+              compactUiWidth: state.simplifyText !== false
+            }
           }
         }, '*');
       }
@@ -4573,6 +4595,586 @@ echo "=========================================="
       }
     };
 
+        // UI Text Extreme Simplification Engine (Post-processing for ultra-punchy mobile microcopy)
+    const TextSimplificationEngine = (() => {
+      const C48 = {"copy":{"en":"Copy","zh":"跟单","zh-tw":"跟單","ja":"コピー","ko":"카피","fr":"Copier","de":"Kopieren","es":"Copiar","pt":"Copiar","it":"Copia","ru":"Копировать","nl":"Kopiëren","pl":"Kopiuj","tr":"Kopyala","ar":"نسخ","th":"คัดลอก","vi":"Sao chép","id":"Salin","ms":"Salin","sv":"Kopiera","da":"Kopier","no":"Kopier","fi":"Kopioi","cs":"Kopírovat","hu":"Másolás","ro":"Copiere","el":"Αντιγραφή","he":"העתק","tl":"Kopyahin","hi":"कॉपी","bn":"কপি","ur":"کاپی","uk":"Копіювати","bg":"Копиране","hr":"Kopiraj","sk":"Kopírovať","lt":"Kopijuoti","lv":"Kopēt","et":"Kopeeri","sl":"Kopiraj","sw":"Nakili","af":"Kopieer","ca":"Copiar","fa":"کپی","mn":"Хуулах","my":"ကူးရန်","km":"ចម្លង","pt-BR":"Copiar"},"order":{"en":"Order","zh":"下单","zh-tw":"下單","ja":"注文","ko":"주문","fr":"Commander","de":"Bestellen","es":"Ordenar","pt":"Pedir","it":"Ordina","ru":"Заказать","nl":"Bestellen","pl":"Zamów","tr":"Emir","ar":"طلب","th":"สั่งซื้อ","vi":"Đặt lệnh","id":"Pesan","ms":"Pesan","sv":"Beställ","da":"Bestil","no":"Bestill","fi":"Tilaa","cs":"Objednat","hu":"Rendelés","ro":"Comandă","el":"Παραγγελία","he":"הזמנה","tl":"Mag-order","hi":"ऑर्डर","bn":"অর্ডার","ur":"آرڈر","uk":"Замовити","bg":"Поръчка","hr":"Naruči","sk":"Objednať","lt":"Užsakyti","lv":"Pasūtīt","et":"Telli","sl":"Naroči","sw":"Agiza","af":"Bestel","ca":"Demanar","fa":"سفارش","mn":"Захиалах","my":"အော်ဒါ","km":"បញ្ជាទិញ","pt-BR":"Pedir"},"close":{"en":"Close","zh":"平仓","zh-tw":"平倉","ja":"決済","ko":"청산","fr":"Fermer","de":"Schließen","es":"Cerrar","pt":"Fechar","it":"Chiudi","ru":"Закрыть","nl":"Sluiten","pl":"Zamknij","tr":"Kapat","ar":"إغلاق","th":"ปิด","vi":"Đóng","id":"Tutup","ms":"Tutup","sv":"Stäng","da":"Luk","no":"Lukk","fi":"Sulje","cs":"Zavřít","hu":"Zárás","ro":"Închide","el":"Κλείσιμο","he":"סגור","tl":"Isara","hi":"बंद","bn":"বন্ধ","ur":"بند","uk":"Закрити","bg":"Затвори","hr":"Zatvori","sk":"Zavrieť","lt":"Uždaryti","lv":"Aizvērt","et":"Sulge","sl":"Zapri","sw":"Funga","af":"Sluit","ca":"Tancar","fa":"بستن","mn":"Хаах","my":"ပိတ်ရန်","km":"បិទ","pt-BR":"Fechar"},"closeAll":{"en":"Close All","zh":"全部平仓","zh-tw":"全部平倉","ja":"全決済","ko":"전체청산","fr":"Tout fermer","de":"Alles schließen","es":"Cerrar todo","pt":"Fechar tudo","it":"Chiudi tutto","ru":"Закрыть все","nl":"Alles sluiten","pl":"Zamknij wszystko","tr":"Tümünü kapat","ar":"إغلاق الكل","th":"ปิดทั้งหมด","vi":"Đóng tất cả","id":"Tutup semua","ms":"Tutup semua","sv":"Stäng alla","da":"Luk alle","no":"Lukk alle","fi":"Sulje kaikki","cs":"Zavřít vše","hu":"Mindent zár","ro":"Închide tot","el":"Κλείσιμο όλων","he":"סגור הכל","tl":"Isara lahat","hi":"सभी बंद","bn":"সব বন্ধ","ur":"سب بند","uk":"Закрити все","bg":"Затвори всичко","hr":"Zatvori sve","sk":"Zavrieť všetko","lt":"Uždaryti viską","lv":"Aizvērt visu","et":"Sulge kõik","sl":"Zapri vse","sw":"Funga zote","af":"Sluit alles","ca":"Tancar tot","fa":"بستن همه","mn":"Бүгдийг хаах","my":"အားလုံးပိတ်","km":"បិទទាំងអស់","pt-BR":"Fechar tudo"},"open":{"en":"Open","zh":"开仓","zh-tw":"開倉","ja":"建玉","ko":"오픈","fr":"Ouvrir","de":"Eröffnen","es":"Abrir","pt":"Abrir","it":"Apri","ru":"Открыть","nl":"Openen","pl":"Otwórz","tr":"Aç","ar":"فتح","th":"เปิด","vi":"Mở vị thế","id":"Buka","ms":"Buka","sv":"Öppna","da":"Åbn","no":"Åpne","fi":"Avaa","cs":"Otevřít","hu":"Megnyitás","ro":"Deschide","el":"Άνοιγμα","he":"פתח","tl":"Buksan","hi":"खोलें","bn":"খুলুন","ur":"کھولیں","uk":"Відкрити","bg":"Отвори","hr":"Otvori","sk":"Otvoriť","lt":"Atidaryti","lv":"Atvērt","et":"Ava","sl":"Odpri","sw":"Fungua","af":"Oop","ca":"Obrir","fa":"باز کردن","mn":"Нээх","my":"ဖွင့်ရန်","km":"បើក","pt-BR":"Abrir"},"add":{"en":"Add","zh":"加仓","zh-tw":"加倉","ja":"追加","ko":"추가","fr":"Ajouter","de":"Aufstocken","es":"Añadir","pt":"Adicionar","it":"Aggiungi","ru":"Добавить","nl":"Toevoegen","pl":"Dodaj","tr":"Ekle","ar":"إضافة","th":"เพิ่ม","vi":"Thêm","id":"Tambah","ms":"Tambah","sv":"Lägg till","da":"Tilføj","no":"Legg til","fi":"Lisää","cs":"Přidat","hu":"Hozzáadás","ro":"Adaugă","el":"Προσθήκη","he":"הוסף","tl":"Magdagdag","hi":"जोड़ें","bn":"যোগ করুন","ur":"شامل کریں","uk":"Додати","bg":"Добавяне","hr":"Dodaj","sk":"Pridať","lt":"Pridėti","lv":"Pievienot","et":"Lisa","sl":"Dodaj","sw":"Ongeza","af":"Voeg by","ca":"Afegir","fa":"افزودن","mn":"Нэмэх","my":"ထည့်ရန်","km":"បន្ថែម","pt-BR":"Adicionar"},"reduce":{"en":"Reduce","zh":"减仓","zh-tw":"減倉","ja":"削減","ko":"부분매도","fr":"Réduire","de":"Reduzieren","es":"Reducir","pt":"Reduzir","it":"Riduci","ru":"Сократить","nl":"Verminderen","pl":"Zmniejsz","tr":"Azalt","ar":"تقليص","th":"ลด","vi":"Giảm","id":"Kurangi","ms":"Kurangkan","sv":"Minska","da":"Reducer","no":"Reduser","fi":"Vähennä","cs":"Zmenšit","hu":"Csökkentés","ro":"Reduce","el":"Μείωση","he":"צמצם","tl":"Bawasan","hi":"घटाएं","bn":"কমান","ur":"کم کریں","uk":"Зменшити","bg":"Намаляване","hr":"Smanji","sk":"Znížiť","lt":"Sumažinti","lv":"Samazināt","et":"Vähenda","sl":"Zmanjšaj","sw":"Punguza","af":"Verminder","ca":"Reduir","fa":"کاهش","mn":"Бууруулах","my":"လျှော့ရန်","km":"កាត់បន្ថយ","pt-BR":"Reduzir"},"positions":{"en":"Positions","zh":"持仓","zh-tw":"持倉","ja":"保有","ko":"보유","fr":"Positions","de":"Positionen","es":"Posiciones","pt":"Posições","it":"Posizioni","ru":"Позиции","nl":"Posities","pl":"Pozycje","tr":"Pozisyonlar","ar":"المراكز","th":"สถานะ","vi":"Vị thế","id":"Posisi","ms":"Posisi","sv":"Positioner","da":"Positioner","no":"Posisjoner","fi":"Positiot","cs":"Pozice","hu":"Pozíciók","ro":"Poziții","el":"Θέσεις","he":"פוזיציות","tl":"Mga posisyon","hi":"पोजीशन","bn":"পজিশন","ur":"پوزیشنز","uk":"Позиції","bg":"Позиции","hr":"Pozicije","sk":"Pozície","lt":"Pozicijos","lv":"Pozīcijas","et":"Positsioonid","sl":"Pozicije","sw":"Nafasi","af":"Posisies","ca":"Posicions","fa":"موقعیت‌ها","mn":"Байршил","my":"ရာထူးများ","km":"ទីតាំង","pt-BR":"Posições"},"cancel":{"en":"Cancel","zh":"撤单","zh-tw":"撤單","ja":"取消","ko":"취소","fr":"Annuler","de":"Stornieren","es":"Cancelar","pt":"Cancelar","it":"Annulla","ru":"Отменить","nl":"Annuleren","pl":"Anuluj","tr":"İptal","ar":"إلغاء","th":"ยกเลิก","vi":"Hủy","id":"Batal","ms":"Batal","sv":"Avbryt","da":"Annuller","no":"Avbryt","fi":"Peruuta","cs":"Zrušit","hu":"Mégse","ro":"Anulează","el":"Ακύρωση","he":"ביטול","tl":"Kanselahin","hi":"रद्द करें","bn":"বাতিল","ur":"منسوخ","uk":"Скасувати","bg":"Отказ","hr":"Otkaži","sk":"Zrušiť","lt":"Atšaukti","lv":"Atcelt","et":"Tühista","sl":"Prekliči","sw":"Ghairi","af":"Kanselleer","ca":"Cancel·lar","fa":"لغو","mn":"Цуцлах","my":"ဖျက်သိမ်းရန်","km":"បោះបង់","pt-BR":"Cancelar"},"deposit":{"en":"Deposit","zh":"充值","zh-tw":"儲值","ja":"入金","ko":"입금","fr":"Dépôt","de":"Einzahlung","es":"Depósito","pt":"Depósito","it":"Deposito","ru":"Депозит","nl":"Storten","pl":"Wpłata","tr":"Yatır","ar":"إيداع","th":"ฝากเงิน","vi":"Nạp tiền","id":"Deposit","ms":"Deposit","sv":"Insättning","da":"Indbetal","no":"Innskudd","fi":"Talleta","cs":"Vložit","hu":"Befizetés","ro":"Depunere","el":"Κατάθεση","he":"הפקדה","tl":"Magdeposito","hi":"जमा","bn":"জমা","ur":"جمع","uk":"Депозит","bg":"Депозит","hr":"Uplata","sk":"Vklad","lt":"Įnešti","lv":"Iemaksa","et":"Sissemakse","sl":"Polog","sw":"Weka","af":"Deposito","ca":"Dipòsit","fa":"واریز","mn":"Хадгаламж","my":"ငွေသွင်းရန်","km":"ដាក់ប្រាក់","pt-BR":"Depósito"},"withdraw":{"en":"Withdraw","zh":"提现","zh-tw":"提現","ja":"出金","ko":"출금","fr":"Retrait","de":"Auszahlung","es":"Retiro","pt":"Retirada","it":"Prelievo","ru":"Вывод","nl":"Opnemen","pl":"Wypłata","tr":"Çek","ar":"سحب","th":"ถอนเงิน","vi":"Rút tiền","id":"Tarik","ms":"Tarik balik","sv":"Ta ut","da":"Udbetal","no":"Uttak","fi":"Nosta","cs":"Vybrat","hu":"Kifizetés","ro":"Retrage","el":"Ανάληψη","he":"משיכה","tl":"Mag-withdraw","hi":"निकासी","bn":"উত্তোলন","ur":"نکالنا","uk":"Вивести","bg":"Теглене","hr":"Isplata","sk":"Vybrať","lt":"Išimti","lv":"Izmaksa","et":"Väljamakse","sl":"Dvig","sw":"Toa","af":"Onttrek","ca":"Retirar","fa":"برداشت","mn":"Татах","my":"ငွေထုတ်ရန်","km":"ដកប្រាក់","pt-BR":"Retirada"},"transfer":{"en":"Transfer","zh":"划转","zh-tw":"劃轉","ja":"振替","ko":"이체","fr":"Transférer","de":"Transferieren","es":"Transferir","pt":"Transferir","it":"Trasferisci","ru":"Перевести","nl":"Overboeken","pl":"Przelew","tr":"Transfer","ar":"تحويل","th":"โอนย้าย","vi":"Chuyển quỹ","id":"Transfer","ms":"Pindah","sv":"Överför","da":"Overfør","no":"Overfør","fi":"Siirrä","cs":"Převést","hu":"Átutalás","ro":"Transferă","el":"Μεταφορά","he":"העברה","tl":"Ilipat","hi":"स्थानांतरण","bn":"স্থানান্তর","ur":"منتقلی","uk":"Переказати","bg":"Превод","hr":"Prijenos","sk":"Previesť","lt":"Pervesti","lv":"Pārskaitīt","et":"Kanna üle","sl":"Prenos","sw":"Hamisha","af":"Oordrag","ca":"Transferir","fa":"انتقال","mn":"Шилжүүлэх","my":"လွှဲပြောင်းရန်","km":"ផ្ទេរ","pt-BR":"Transferir"},"stake":{"en":"Stake","zh":"质押","zh-tw":"質押","ja":"ステーキング","ko":"스테이킹","fr":"Staker","de":"Staken","es":"Stakear","pt":"Staking","it":"Staking","ru":"Стейкинг","nl":"Staken","pl":"Stake","tr":"Stake","ar":"رهن","th":"Stake","vi":"Stake","id":"Stake","ms":"Stake","sv":"Lås","da":"Stake","no":"Stake","fi":"Talleta","cs":"Uzamknout","hu":"Lekötés","ro":"Miză","el":"Ενέχυρο","he":"נעילה","tl":"I-stake","hi":"स्टेक","bn":"স্টেক","ur":"سٹیک","uk":"Стейкінг","bg":"Стейкинг","hr":"Stake","sk":"Uzamknúť","lt":"Statyti","lv":"Ieķīlāt","et":"Panusta","sl":"Zastavi","sw":"Weka rehani","af":"Belê","ca":"Apostar","fa":"سپرده","mn":"Барцаа","my":"အပေါင်ထား","km":"បញ្ចាំ","pt-BR":"Staking"},"swap":{"en":"Swap","zh":"闪兑","zh-tw":"閃兌","ja":"スワップ","ko":"스왑","fr":"Échanger","de":"Tauschen","es":"Canjear","pt":"Trocar","it":"Scambia","ru":"Обмен","nl":"Wisselen","pl":"Wymień","tr":"Takas","ar":"تبديل","th":"สลับ","vi":"Đổi","id":"Tukar","ms":"Tukar","sv":"Växla","da":"Byt","no":"Veksle","fi":"Vaihda","cs":"Vyměnit","hu":"Csere","ro":"Schimbă","el":"Ανταλλαγή","he":"החלף","tl":"Palitan","hi":"स्वैप","bn":"অদলবদল","ur":"تبادلہ","uk":"Обмін","bg":"Размяна","hr":"Zamijeni","sk":"Vymeniť","lt":"Sukeisti","lv":"Mainīt","et":"Vaheta","sl":"Zamenjaj","sw":"Badilisha","af":"Ruil","ca":"Canviar","fa":"مبادله","mn":"Солих","my":"လဲလှယ်ရန်","km":"ប្តូរ","pt-BR":"Trocar"},"buy":{"en":"Buy","zh":"购买","zh-tw":"購買","ja":"購入","ko":"구매","fr":"Acheter","de":"Kaufen","es":"Comprar","pt":"Comprar","it":"Compra","ru":"Купить","nl":"Kopen","pl":"Kup","tr":"Satın al","ar":"شراء","th":"ซื้อ","vi":"Mua","id":"Beli","ms":"Beli","sv":"Köp","da":"Køb","no":"Kjøp","fi":"Osta","cs":"Koupit","hu":"Vásárlás","ro":"Cumpără","el":"Αγορά","he":"קנה","tl":"Bumili","hi":"खरीदें","bn":"কিনুন","ur":"خریدیں","uk":"Купити","bg":"Купи","hr":"Kupi","sk":"Kúpiť","lt":"Pirkti","lv":"Pirkt","et":"Osta","sl":"Kupi","sw":"Nunua","af":"Koop","ca":"Comprar","fa":"خرید","mn":"Худалдаж авах","my":"ဝယ်ရန်","km":"ទិញ","pt-BR":"Comprar"},"sell":{"en":"Sell","zh":"出售","zh-tw":"出售","ja":"売却","ko":"판매","fr":"Vendre","de":"Verkaufen","es":"Vender","pt":"Vender","it":"Vendi","ru":"Продать","nl":"Verkopen","pl":"Sprzedaj","tr":"Sat","ar":"بيع","th":"ขาย","vi":"Bán","id":"Jual","ms":"Jual","sv":"Sälj","da":"Sælg","no":"Selg","fi":"Myy","cs":"Prodat","hu":"Eladás","ro":"Vinde","el":"Πώληση","he":"מכור","tl":"Magbenta","hi":"बेचें","bn":"বিক্রি","ur":"فروخت","uk":"Продати","bg":"Продай","hr":"Prodaj","sk":"Predať","lt":"Parduoti","lv":"Pārdot","et":"Müü","sl":"Prodaj","sw":"Uza","af":"Verkoop","ca":"Vendre","fa":"فروش","mn":"Зарах","my":"ရောင်းရန်","km":"លក់","pt-BR":"Vender"},"checkout":{"en":"Checkout","zh":"结算","zh-tw":"結帳","ja":"レジへ","ko":"결제","fr":"Paiement","de":"Kasse","es":"Pagar","pt":"Pagar","it":"Cassa","ru":"Оплата","nl":"Afrekenen","pl":"Kasa","tr":"Ödeme","ar":"دفع","th":"ชำระเงิน","vi":"Thanh toán","id":"Checkout","ms":"Bayar","sv":"Kassa","da":"Kasse","no":"Kasse","fi":"Kassalle","cs":"Pokladna","hu":"Pénztár","ro":"Finalizare","el":"Ταμείο","he":"לתשלום","tl":"Checkout","hi":"चेकआउट","bn":"চেকআউট","ur":"چیک آؤٹ","uk":"Оплата","bg":"Плащане","hr":"Blagajna","sk":"Pokladňa","lt":"Apmokėti","lv":"Kase","et":"Kassa","sl":"Blagajna","sw":"Lipa sasa","af":"Meld af","ca":"Caixa","fa":"تسویه","mn":"Төлбөр","my":"ငွေရှင်းရန်","km":"គិតលុយ","pt-BR":"Pagar"},"details":{"en":"Details","zh":"详情","zh-tw":"詳情","ja":"詳細","ko":"상세","fr":"Détails","de":"Details","es":"Detalles","pt":"Detalhes","it":"Dettagli","ru":"Детали","nl":"Details","pl":"Szczegóły","tr":"Detaylar","ar":"تفاصيل","th":"รายละเอียด","vi":"Chi tiết","id":"Detail","ms":"Butiran","sv":"Detaljer","da":"Detaljer","no":"Detaljer","fi":"Tiedot","cs":"Podrobnosti","hu":"Részletek","ro":"Detalii","el":"Λεπτομέρειες","he":"פרטים","tl":"Mga detalye","hi":"विवरण","bn":"বিস্তারিত","ur":"تفصیلات","uk":"Деталі","bg":"Детайли","hr":"Pojedinosti","sk":"Podrobnosti","lt":"Išsamiau","lv":"Detaļas","et":"Üksikasjad","sl":"Podrobnosti","sw":"Maelezo","af":"Besonderhede","ca":"Detalls","fa":"جزئیات","mn":"Дэлгэрэнгүй","my":"အသေးစိတ်","km":"ព័ត៌មានលម្អិត","pt-BR":"Detalhes"},"more":{"en":"More","zh":"更多","zh-tw":"更多","ja":"もっと見る","ko":"더보기","fr":"Plus","de":"Mehr","es":"Más","pt":"Mais","it":"Altro","ru":"Ещё","nl":"Meer","pl":"Więcej","tr":"Daha fazla","ar":"المزيد","th":"เพิ่มเติม","vi":"Thêm","id":"Lainnya","ms":"Lagi","sv":"Mer","da":"Mere","no":"Mer","fi":"Lisää","cs":"Více","hu":"Tovább","ro":"Mai mult","el":"Περισσότερα","he":"עוד","tl":"Higit pa","hi":"अधिक","bn":"আরও","ur":"مزید","uk":"Більше","bg":"Още","hr":"Više","sk":"Viac","lt":"Daugiau","lv":"Vairāk","et":"Rohkem","sl":"Več","sw":"Zaidi","af":"Meer","ca":"Més","fa":"بیشتر","mn":"Цааш","my":"နောက်ထပ်","km":"ច្រើនទៀត","pt-BR":"Mais"},"pay":{"en":"Pay","zh":"支付","zh-tw":"支付","ja":"支払","ko":"결제","fr":"Payer","de":"Bezahlen","es":"Pagar","pt":"Pagar","it":"Paga","ru":"Оплатить","nl":"Betalen","pl":"Płać","tr":"Öde","ar":"دفع","th":"จ่าย","vi":"Thanh toán","id":"Bayar","ms":"Bayar","sv":"Betala","da":"Betal","no":"Betal","fi":"Maksa","cs":"Zaplatit","hu":"Fizetés","ro":"Plătește","el":"Πληρωμή","he":"תשלום","tl":"Magbayad","hi":"भुगतान","bn":"পরিশোধ","ur":"ادائیگی","uk":"Оплатити","bg":"Плати","hr":"Plati","sk":"Zaplatiť","lt":"Mokėti","lv":"Maksāt","et":"Maksa","sl":"Plačaj","sw":"Lipa","af":"Betaal","ca":"Pagar","fa":"پرداخت","mn":"Төлөх","my":"ငွေပေးချေရန်","km":"បង់ប្រាក់","pt-BR":"Pagar"},"login":{"en":"Login","zh":"登录","zh-tw":"登入","ja":"ログイン","ko":"로그인","fr":"Connexion","de":"Anmelden","es":"Entrar","pt":"Entrar","it":"Accedi","ru":"Войти","nl":"Inloggen","pl":"Zaloguj","tr":"Giriş","ar":"دخول","th":"เข้าสู่ระบบ","vi":"Đăng nhập","id":"Masuk","ms":"Log masuk","sv":"Logga in","da":"Log ind","no":"Logg inn","fi":"Kirjaudu","cs":"Přihlásit","hu":"Belépés","ro":"Autentificare","el":"Σύνδεση","he":"כניסה","tl":"Mag-login","hi":"लॉग इन","bn":"লগইন","ur":"لاگ ان","uk":"Увійти","bg":"Вход","hr":"Prijava","sk":"Prihlásiť","lt":"Prisijungti","lv":"Ienākt","et":"Logi sisse","sl":"Prijava","sw":"Ingia","af":"Meld aan","ca":"Entrar","fa":"ورود","mn":"Нэвтрэх","my":"ဝင်ရန်","km":"ចូល","pt-BR":"Entrar"},"logout":{"en":"Logout","zh":"退出","zh-tw":"登出","ja":"ログアウト","ko":"로그아웃","fr":"Déconnexion","de":"Abmelden","es":"Salir","pt":"Sair","it":"Esci","ru":"Выйти","nl":"Uitloggen","pl":"Wyloguj","tr":"Çıkış","ar":"خروج","th":"ออกจากระบบ","vi":"Đăng xuất","id":"Keluar","ms":"Log keluar","sv":"Logga ut","da":"Log ud","no":"Logg ut","fi":"Kirjaudu ulos","cs":"Odhlásit","hu":"Kilépés","ro":"Deconectare","el":"Αποσύνδεση","he":"יציאה","tl":"Mag-logout","hi":"लॉग आउट","bn":"লগআউট","ur":"لاگ آؤٹ","uk":"Вийти","bg":"Изход","hr":"Odjava","sk":"Odhlásiť","lt":"Atsijungti","lv":"Iziet","et":"Logi välja","sl":"Odjava","sw":"Toka","af":"Meld af","ca":"Sortir","fa":"خروج","mn":"Гарах","my":"ထွက်ရန်","km":"ចាកចេញ","pt-BR":"Sair"},"register":{"en":"Register","zh":"注册","zh-tw":"註冊","ja":"登録","ko":"가입","fr":"S'inscrire","de":"Registrieren","es":"Registrarse","pt":"Registrar","it":"Registrati","ru":"Регистрация","nl":"Registreren","pl":"Zarejestruj","tr":"Kayıt","ar":"تسجيل","th":"ลงทะเบียน","vi":"Đăng ký","id":"Daftar","ms":"Daftar","sv":"Registrera","da":"Registrer","no":"Registrer","fi":"Rekisteröidy","cs":"Registrace","hu":"Regisztráció","ro":"Înregistrare","el":"Εγγραφή","he":"הרשמה","tl":"Magrehistro","hi":"रजिस्टर","bn":"নিবন্ধন","ur":"رجسٹر","uk":"Реєстрація","bg":"Регистрация","hr":"Registracija","sk":"Registrácia","lt":"Registruotis","lv":"Reģistrēties","et":"Registreeru","sl":"Registracija","sw":"Jisajili","af":"Registreer","ca":"Registrar","fa":"ثبت‌نام","mn":"Бүртгүүлэх","my":"မှတ်ပုံတင်","km":"ចុះឈ្មោះ","pt-BR":"Registrar"},"search":{"en":"Search","zh":"搜索","zh-tw":"搜尋","ja":"検索","ko":"검색","fr":"Rechercher","de":"Suchen","es":"Buscar","pt":"Buscar","it":"Cerca","ru":"Поиск","nl":"Zoeken","pl":"Szukaj","tr":"Ara","ar":"بحث","th":"ค้นหา","vi":"Tìm kiếm","id":"Cari","ms":"Cari","sv":"Sök","da":"Søg","no":"Søk","fi":"Hae","cs":"Hledat","hu":"Keresés","ro":"Caută","el":"Αναζήτηση","he":"חיפוש","tl":"Maghanap","hi":"खोजें","bn":"অনুসন্ধান","ur":"تلاش","uk":"Пошук","bg":"Търсене","hr":"Traži","sk":"Hľadať","lt":"Ieškoti","lv":"Meklēt","et":"Otsi","sl":"Išči","sw":"Tafuta","af":"Soek","ca":"Cercar","fa":"جستجو","mn":"Хайх","my":"ရှာရန်","km":"ស្វែងរក","pt-BR":"Buscar"},"clear":{"en":"Clear","zh":"清空","zh-tw":"清空","ja":"クリア","ko":"비우기","fr":"Effacer","de":"Leeren","es":"Limpiar","pt":"Limpar","it":"Cancella","ru":"Очистить","nl":"Wissen","pl":"Wyczyść","tr":"Temizle","ar":"مسح","th":"ล้าง","vi":"Xóa sạch","id":"Bersihkan","ms":"Kosongkan","sv":"Rensa","da":"Ryd","no":"Tøm","fi":"Tyhjennä","cs":"Vymazat","hu":"Törlés","ro":"Șterge","el":"Εκκαθάριση","he":"נקה","tl":"Linisin","hi":"साफ़ करें","bn":"মুছুন","ur":"صاف کریں","uk":"Очистити","bg":"Изчисти","hr":"Očisti","sk":"Vymazať","lt":"Išvalyti","lv":"Notīrīt","et":"Tühjenda","sl":"Počisti","sw":"Futa","af":"Maak skoon","ca":"Netejar","fa":"پاک کردن","mn":"Цэвэрлэх","my":"ရှင်းလင်းရန်","km":"សម្អាត","pt-BR":"Limpar"},"reset":{"en":"Reset","zh":"重置","zh-tw":"重設","ja":"リセット","ko":"초기화","fr":"Réinitialiser","de":"Zurücksetzen","es":"Restablecer","pt":"Redefinir","it":"Reimposta","ru":"Сброс","nl":"Herstellen","pl":"Resetuj","tr":"Sıfırla","ar":"إعادة تعيين","th":"รีเซ็ต","vi":"Đặt lại","id":"Reset","ms":"Tetapkan semula","sv":"Återställ","da":"Nulstil","no":"Tilbakestill","fi":"Nollaa","cs":"Obnovit","hu":"Visszaállítás","ro":"Resetează","el":"Επαναφορά","he":"איפוס","tl":"I-reset","hi":"रीसेट","bn":"রিসেট","ur":"دوبارہ ترتیب","uk":"Скинути","bg":"Нулиране","hr":"Poništi","sk":"Obnoviť","lt":"Atkurti","lv":"Atiestatīt","et":"Lähtesta","sl":"Ponastavi","sw":"Weka upya","af":"Herstel","ca":"Restablir","fa":"بازنشانی","mn":"Дахин тохируулах","my":"ပြန်လည်သတ်မှတ်","km":"កំណត់ឡើងវិញ","pt-BR":"Redefinir"},"settings":{"en":"Settings","zh":"设置","zh-tw":"設定","ja":"設定","ko":"설정","fr":"Paramètres","de":"Einstellungen","es":"Ajustes","pt":"Configurações","it":"Impostazioni","ru":"Настройки","nl":"Instellingen","pl":"Ustawienia","tr":"Ayarlar","ar":"الإعدادات","th":"การตั้งค่า","vi":"Cài đặt","id":"Pengaturan","ms":"Tetapan","sv":"Inställningar","da":"Indstillinger","no":"Innstillinger","fi":"Asetukset","cs":"Nastavení","hu":"Beállítások","ro":"Setări","el":"Ρυθμίσεις","he":"הגדרות","tl":"Mga setting","hi":"सेटिंग्स","bn":"সেটিংস","ur":"ترتیبات","uk":"Налаштування","bg":"Настройки","hr":"Postavke","sk":"Nastavenia","lt":"Nustatymai","lv":"Iestatījumi","et":"Seaded","sl":"Nastavitve","sw":"Mipangilio","af":"Instellings","ca":"Configuració","fa":"تنظیمات","mn":"Тохиргоо","my":"ဆက်တင်များ","km":"ការកំណត់","pt-BR":"Configurações"},"wallet":{"en":"Wallet","zh":"钱包","zh-tw":"錢包","ja":"ウォレット","ko":"지갑","fr":"Portefeuille","de":"Wallet","es":"Billetera","pt":"Carteira","it":"Portafoglio","ru":"Кошелек","nl":"Wallet","pl":"Portfel","tr":"Cüzdan","ar":"محفظة","th":"กระเป๋าเงิน","vi":"Ví","id":"Dompet","ms":"Dompet","sv":"Plånbok","da":"Pung","no":"Lommebok","fi":"Lompakko","cs":"Peněženka","hu":"Pénztárca","ro":"Portofel","el":"Πορτοφόλι","he":"ארנק","tl":"Wallet","hi":"वॉलेट","bn":"ওয়ালেট","ur":"والیٹ","uk":"Гаманець","bg":"Портфейл","hr":"Novčanik","sk":"Peňaženka","lt":"Piniginė","lv":"Maks","et":"Rahakott","sl":"Denarnica","sw":"Pochi","af":"Beursie","ca":"Cartera","fa":"کیف پول","mn":"Хэтэвч","my":"ပိုက်ဆံအိတ်","km":"កាបូប","pt-BR":"Carteira"},"orders":{"en":"Orders","zh":"订单","zh-tw":"訂單","ja":"注文","ko":"주문","fr":"Ordres","de":"Aufträge","es":"Órdenes","pt":"Ordens","it":"Ordini","ru":"Заказы","nl":"Bestellingen","pl":"Zamówienia","tr":"Siparişler","ar":"الطلبات","th":"คำสั่งซื้อ","vi":"Đơn hàng","id":"Pesanan","ms":"Pesanan","sv":"Beställningar","da":"Ordrer","no":"Bestillinger","fi":"Tilaukset","cs":"Objednávky","hu":"Rendelések","ro":"Comenzi","el":"Παραγγελίες","he":"הזמנות","tl":"Mga order","hi":"ऑर्डर","bn":"অর্ডার","ur":"آرڈرز","uk":"Замовлення","bg":"Поръчки","hr":"Narudžbe","sk":"Objednávky","lt":"Užsakymai","lv":"Pasūtījumi","et":"Tellimused","sl":"Naročila","sw":"Maagizo","af":"Bestellings","ca":"Comandes","fa":"سفارش‌ها","mn":"Захиалгууд","my":"အော်ဒါများ","km":"ការបញ្ជាទិញ","pt-BR":"Ordens"},"assets":{"en":"Assets","zh":"资产","zh-tw":"資產","ja":"資産","ko":"자산","fr":"Actifs","de":"Vermögen","es":"Activos","pt":"Ativos","it":"Asset","ru":"Активы","nl":"Activa","pl":"Aktywa","tr":"Varlıklar","ar":"أصول","th":"สินทรัพย์","vi":"Tài sản","id":"Aset","ms":"Aset","sv":"Tillgångar","da":"Aktiver","no":"Eiendeler","fi":"Varat","cs":"Aktiva","hu":"Eszközök","ro":"Active","el":"Περιουσιακά","he":"נכסים","tl":"Mga asset","hi":"संपत्ति","bn":"সম্পদ","ur":"اثاثے","uk":"Активи","bg":"Активи","hr":"Imovina","sk":"Aktíva","lt":"Turtas","lv":"Aktīvi","et":"Varad","sl":"Sredstva","sw":"Mali","af":"Bates","ca":"Actius","fa":"دارایی‌ها","mn":"Хөрөнгө","my":"ပိုင်ဆိုင်မှုများ","km":"ទ្រព្យសកម្ម","pt-BR":"Ativos"},"help":{"en":"Help","zh":"帮助","zh-tw":"說明","ja":"ヘルプ","ko":"도움말","fr":"Aide","de":"Hilfe","es":"Ayuda","pt":"Ajuda","it":"Aiuto","ru":"Помощь","nl":"Hulp","pl":"Pomoc","tr":"Yardım","ar":"مساعدة","th":"ช่วยเหลือ","vi":"Trợ giúp","id":"Bantuan","ms":"Bantuan","sv":"Hjälp","da":"Hjælp","no":"Hjelp","fi":"Ohje","cs":"Nápověda","hu":"Súgó","ro":"Ajutor","el":"Βοήθεια","he":"עזרה","tl":"Tulong","hi":"मदद","bn":"সাহায্য","ur":"مدد","uk":"Допомога","bg":"Помощ","hr":"Pomoć","sk":"Pomoc","lt":"Pagalba","lv":"Palīdzība","et":"Abi","sl":"Pomoč","sw":"Usaidizi","af":"Hulp","ca":"Ajuda","fa":"راهنما","mn":"Тусламж","my":"အကူအညီ","km":"ជំនួយ","pt-BR":"Ajuda"},"security":{"en":"Security","zh":"安全","zh-tw":"安全性","ja":"セキュリティ","ko":"보안","fr":"Sécurité","de":"Sicherheit","es":"Seguridad","pt":"Segurança","it":"Sicurezza","ru":"Безопасность","nl":"Beveiliging","pl":"Bezpieczeństwo","tr":"Güvenlik","ar":"الأمان","th":"ความปลอดภัย","vi":"Bảo mật","id":"Keamanan","ms":"Keselamatan","sv":"Säkerhet","da":"Sikkerhed","no":"Sikkerhet","fi":"Turvallisuus","cs":"Zabezpečení","hu":"Biztonság","ro":"Securitate","el":"Ασφάλεια","he":"אבטחה","tl":"Seguridad","hi":"सुरक्षा","bn":"নিরাপত্তা","ur":"سیکیورٹی","uk":"Безпека","bg":"Сигурност","hr":"Sigurnost","sk":"Zabezpečenie","lt":"Sauga","lv":"Drošība","et":"Turvalisus","sl":"Varnost","sw":"Usalama","af":"Sekuriteit","ca":"Seguretat","fa":"امنیت","mn":"Аюулгүй байдал","my":"လုံခြုံရေး","km":"សុវត្ថិភាព","pt-BR":"Segurança"},"devices":{"en":"Devices","zh":"设备","zh-tw":"裝置","ja":"デバイス","ko":"기기","fr":"Appareils","de":"Geräte","es":"Dispositivos","pt":"Dispositivos","it":"Dispositivi","ru":"Устройства","nl":"Apparaten","pl":"Urządzenia","tr":"Cihazlar","ar":"أجهزة","th":"อุปกรณ์","vi":"Thiết bị","id":"Perangkat","ms":"Peranti","sv":"Enheter","da":"Enheder","no":"Enheter","fi":"Laitteet","cs":"Zařízení","hu":"Eszközök","ro":"Dispozitive","el":"Συσκευές","he":"מכשירים","tl":"Mga device","hi":"उपकरण","bn":"ডিভাইস","ur":"آلات","uk":"Пристрої","bg":"Устройства","hr":"Uređaji","sk":"Zariadenia","lt":"Įrenginiai","lv":"Ierīces","et":"Seadmed","sl":"Naprave","sw":"Vifaa","af":"Toestelle","ca":"Dispositius","fa":"دستگاه‌ها","mn":"Төхөөрөмж","my":"စက်ပစ္စည်းများ","km":"ឧបករណ៍","pt-BR":"Dispositivos"},"history":{"en":"History","zh":"历史","zh-tw":"歷史","ja":"履歴","ko":"내역","fr":"Historique","de":"Verlauf","es":"Historial","pt":"Histórico","it":"Cronologia","ru":"История","nl":"Geschiedenis","pl":"Historia","tr":"Geçmiş","ar":"السجل","th":"ประวัติ","vi":"Lịch sử","id":"Riwayat","ms":"Sejarah","sv":"Historik","da":"Historik","no":"Historikk","fi":"Historia","cs":"Historie","hu":"Előzmények","ro":"Istoric","el":"Ιστορικό","he":"היסטוריה","tl":"Kasaysayan","hi":"इतिहास","bn":"ইতিহাস","ur":"تاریخ","uk":"Історія","bg":"История","hr":"Povijest","sk":"História","lt":"Istorija","lv":"Vēsture","et":"Ajalugu","sl":"Zgodovina","sw":"Historia","af":"Geskiedenis","ca":"Historial","fa":"تاریخچه","mn":"Түүх","my":"မှတ်တမ်း","km":"ប្រវត្តិ","pt-BR":"Histórico"},"earnings":{"en":"Earnings","zh":"收益","zh-tw":"收益","ja":"収益","ko":"수익","fr":"Gains","de":"Erträge","es":"Ganancias","pt":"Ganhos","it":"Guadagni","ru":"Доходы","nl":"Opbrengsten","pl":"Zyski","tr":"Kazançlar","ar":"الأرباح","th":"รายได้","vi":"Thu nhập","id":"Pendapatan","ms":"Pendapatan","sv":"Intäkter","da":"Indtjening","no":"Inntekt","fi":"Tulot","cs":"Zisky","hu":"Bevétel","ro":"Câștiguri","el":"Κέρδη","he":"רווחים","tl":"Kita","hi":"कमाई","bn":"উপার্জন","ur":"کمائی","uk":"Прибутки","bg":"Печалби","hr":"Zarada","sk":"Zisky","lt":"Pajamos","lv":"Peļņa","et":"Tulud","sl":"Zaslužek","sw":"Mapato","af":"Verdienste","ca":"Guanys","fa":"درآمدها","mn":"Орлого","my":"ဝင်ငွေ","km":"ប្រាក់ចំណូល","pt-BR":"Ganhos"},"favorites":{"en":"Favorites","zh":"收藏","zh-tw":"收藏","ja":"お気に入り","ko":"즐겨찾기","fr":"Favoris","de":"Favoriten","es":"Favoritos","pt":"Favoritos","it":"Preferiti","ru":"Избранное","nl":"Favorieten","pl":"Ulubione","tr":"Favoriler","ar":"المفضلة","th":"รายการโปรด","vi":"Yêu thích","id":"Favorit","ms":"Kegemaran","sv":"Favoriter","da":"Favoritter","no":"Favoritter","fi":"Suosikit","cs":"Oblíbené","hu":"Kedvencek","ro":"Favorite","el":"Αγαπημένα","he":"מועדפים","tl":"Mga paborito","hi":"पसंदीदा","bn":"পছন্দসই","ur":"پسندیدہ","uk":"Вибране","bg":"Любими","hr":"Favoriti","sk":"Obľúbené","lt":"Mėgstamiausi","lv":"Izlase","et":"Lemmikud","sl":"Priljubljene","sw":"Vipendwa","af":"Gunstelinge","ca":"Preferits","fa":"علاقه‌مندی‌ها","mn":"Дуртай","my":"အကြိုက်ဆုံးများ","km":"សំណព្វ","pt-BR":"Favoritos"},"following":{"en":"Following","zh":"关注","zh-tw":"關注","ja":"フォロー","ko":"팔로잉","fr":"Abonnements","de":"Folgen","es":"Siguiendo","pt":"Seguindo","it":"Seguiti","ru":"Подписки","nl":"Volgend","pl":"Obserwowane","tr":"Takip edilen","ar":"متابعة","th":"กำลังติดตาม","vi":"Đang theo dõi","id":"Mengikuti","ms":"Mengikuti","sv":"Följer","da":"Følger","no":"Følger","fi":"Seurataan","cs":"Sledování","hu":"Követve","ro":"Urmăriri","el":"Ακολουθείτε","he":"עוקב","tl":"Sinusubaybayan","hi":"फॉलोइंग","bn":"অনুসরণ","ur":"فالوئنگ","uk":"Підписки","bg":"Следвани","hr":"Prati se","sk":"Sledovanie","lt":"Sekama","lv":"Seko","et":"Jälgitavad","sl":"Sledenje","sw":"Unayofuata","af":"Volg tans","ca":"Seguint","fa":"دنبال‌شده","mn":"Дагаж буй","my":"လိုက်ကြည့်နေသူများ","km":"កំពុងតាមដាន","pt-BR":"Seguindo"},"followers":{"en":"Followers","zh":"粉丝","zh-tw":"粉絲","ja":"フォロワー","ko":"팔로워","fr":"Abonnés","de":"Follower","es":"Seguidores","pt":"Seguidores","it":"Follower","ru":"Подписчики","nl":"Volgers","pl":"Obserwujący","tr":"Takipçiler","ar":"المتابعون","th":"ผู้ติดตาม","vi":"Người theo dõi","id":"Pengikut","ms":"Pengikut","sv":"Följare","da":"Følgere","no":"Følgere","fi":"Seuraajat","cs":"Sledující","hu":"Követők","ro":"Urmăritori","el":"Ακόλουθοι","he":"עוקבים","tl":"Mga tagasunod","hi":"फॉलोअर्स","bn":"অনুসারী","ur":"فالوورز","uk":"Підписники","bg":"Последователи","hr":"Pratitelji","sk":"Sledujúci","lt":"Sekėjai","lv":"Sekotāji","et":"Jälgijad","sl":"Sledilci","sw":"Wafuasi","af":"Volgers","ca":"Seguidors","fa":"دنبال‌کنندگان","mn":"Дагагчид","my":"ဖော်လိုဝါများ","km":"អ្នកតាមដាន","pt-BR":"Seguidores"},"coupons":{"en":"Coupons","zh":"优惠券","zh-tw":"優惠券","ja":"クーポン","ko":"쿠폰","fr":"Coupons","de":"Gutscheine","es":"Cupones","pt":"Cupons","it":"Coupon","ru":"Купоны","nl":"Kortingsbonnen","pl":"Kupony","tr":"Kuponlar","ar":"قسائم","th":"คูปอง","vi":"Phiếu giảm giá","id":"Kupon","ms":"Kupon","sv":"Kuponger","da":"Kuponer","no":"Kuponger","fi":"Kupongit","cs":"Kupóny","hu":"Kuponok","ro":"Cupoane","el":"Κουπόνια","he":"קופונים","tl":"Mga kupon","hi":"कूपन","bn":"কুপন","ur":"کوپنز","uk":"Купони","bg":"Купони","hr":"Kuponi","sk":"Kupóny","lt":"Kuponai","lv":"Kuponi","et":"Kupongid","sl":"Kuponi","sw":"Kuponi","af":"Koepons","ca":"Cupons","fa":"کوپن‌ها","mn":"Купон","my":"ကူပွန်များ","km":"ប័ណ្ណបញ្ចុះតម្លៃ","pt-BR":"Cupons"},"authorize":{"en":"Authorize","zh":"授权","zh-tw":"授權","ja":"認証","ko":"승인","fr":"Autoriser","de":"Autorisieren","es":"Autorizar","pt":"Autorizar","it":"Autorizza","ru":"Авторизовать","nl":"Autoriseren","pl":"Autoryzuj","tr":"Yetkilendir","ar":"تفويض","th":"อนุญาต","vi":"Ủy quyền","id":"Otorisasi","ms":"Pemberian kuasa","sv":"Auktorisera","da":"Godkend","no":"Autoriser","fi":"Valtuuta","cs":"Autorizovat","hu":"Engedélyezés","ro":"Autorizează","el":"Εξουσιοδότηση","he":"הרשאה","tl":"Pahintulutan","hi":"अधिकृत करें","bn":"অনুমোদন","ur":"مجاز کریں","uk":"Авторизувати","bg":"Оторизиране","hr":"Autoriziraj","sk":"Autorizovať","lt":"Įgalioti","lv":"Autorizēt","et":"Autoriseeri","sl":"Pooblasti","sw":"Idhinisha","af":"Magtig","ca":"Autoritzar","fa":"مجوز","mn":"Эрх олгох","my":"ခွင့်ပြုရန်","km":"អនុញ្ញាត","pt-BR":"Autorizar"},"boost":{"en":"Boost","zh":"加速","zh-tw":"加速","ja":"加速","ko":"부스트","fr":"Booster","de":"Beschleunigen","es":"Acelerar","pt":"Acelerar","it":"Accelera","ru":"Ускорить","nl":"Boosten","pl":"Przyspiesz","tr":"Hızlandır","ar":"تسريع","th":"เร่งความเร็ว","vi":"Tăng tốc","id":"Percepat","ms":"Percepatkan","sv":"Öka","da":"Boost","no":"Øk","fi":"Tehosta","cs":"Zrychlit","hu":"Gyorsítás","ro":"Accelerează","el":"Ενίσχυση","he":"האץ","tl":"Pabilisin","hi":"बूस्ट","bn":"বুস্ট","ur":"بوسٹ","uk":"Прискорити","bg":"Ускоряване","hr":"Ubrzaj","sk":"Zrýchliť","lt":"Paspartinti","lv":"Paātrināt","et":"Kiirenda","sl":"Pospeši","sw":"Ongeza kasi","af":"Versnel","ca":"Accelerar","fa":"تقویت","mn":"Хурдасгах","my":"မြှင့်တင်ရန်","km":"បង្កើនល្បឿន","pt-BR":"Acelerar"},"share":{"en":"Share","zh":"分享","zh-tw":"分享","ja":"共有","ko":"공유","fr":"Partager","de":"Teilen","es":"Compartir","pt":"Compartilhar","it":"Condividi","ru":"Поделиться","nl":"Delen","pl":"Udostępnij","tr":"Paylaş","ar":"مشاركة","th":"แชร์","vi":"Chia sẻ","id":"Bagikan","ms":"Kongsi","sv":"Dela","da":"Del","no":"Del","fi":"Jaa","cs":"Sdílet","hu":"Megosztás","ro":"Distribuie","el":"Κοινοποίηση","he":"שתף","tl":"Ibahagi","hi":"साझा करें","bn":"শেয়ার","ur":"شیئر کریں","uk":"Поділитися","bg":"Споделяне","hr":"Podijeli","sk":"Zdieľať","lt":"Dalintis","lv":"Kopīgot","et":"Jaga","sl":"Deli","sw":"Shiriki","af":"Deel","ca":"Compartir","fa":"اشتراک","mn":"Хуваалцах","my":"မျှဝေရန်","km":"ចែករំលែក","pt-BR":"Compartilhar"},"invite":{"en":"Invite","zh":"邀请","zh-tw":"邀請","ja":"招待","ko":"초대","fr":"Inviter","de":"Einladen","es":"Invitar","pt":"Convidar","it":"Invita","ru":"Пригласить","nl":"Uitnodigen","pl":"Zaproś","tr":"Davet et","ar":"دعوة","th":"เชิญ","vi":"Mời","id":"Undang","ms":"Jemput","sv":"Bjud in","da":"Inviter","no":"Inviter","fi":"Kutsu","cs":"Pozvat","hu":"Meghívás","ro":"Invită","el":"Πρόσκληση","he":"הזמן","tl":"Mag-imbita","hi":"आमंत्रित करें","bn":"আমন্ত্রণ","ur":"دعوت دیں","uk":"Запросити","bg":"Покани","hr":"Pozovi","sk":"Pozvať","lt":"Pakviesti","lv":"Ielūgt","et":"Kutsu","sl":"Povabi","sw":"Alika","af":"Nooi","ca":"Convidar","fa":"دعوت","mn":"Урих","my":"ဖိတ်ခေါ်ရန်","km":"អញ្ជើញ","pt-BR":"Convidar"},"profile":{"en":"Profile","zh":"个人资料","zh-tw":"個人檔案","ja":"プロフィール","ko":"프로필","fr":"Profil","de":"Profil","es":"Perfil","pt":"Perfil","it":"Profilo","ru":"Профиль","nl":"Profiel","pl":"Profil","tr":"Profil","ar":"الملف الشخصي","th":"โปรไฟล์","vi":"Hồ sơ","id":"Profil","ms":"Profil","sv":"Profil","da":"Profil","no":"Profil","fi":"Profiili","cs":"Profil","hu":"Profil","ro":"Profil","el":"Προφίλ","he":"פרופיל","tl":"Profile","hi":"प्रोफ़ाइल","bn":"প্রোফাইল","ur":"پروفائل","uk":"Профіль","bg":"Профил","hr":"Profil","sk":"Profil","lt":"Profilis","lv":"Profils","et":"Profiil","sl":"Profil","sw":"Wasifu","af":"Profiel","ca":"Perfil","fa":"پروفایل","mn":"Профайл","my":"ပရိုဖိုင်","km":"ប្រវត្តិរូប","pt-BR":"Perfil"},"messages":{"en":"Messages","zh":"消息","zh-tw":"訊息","ja":"メッセージ","ko":"메시지","fr":"Messages","de":"Nachrichten","es":"Mensajes","pt":"Mensagens","it":"Messaggi","ru":"Сообщения","nl":"Berichten","pl":"Wiadomości","tr":"Mesajlar","ar":"الرسائل","th":"ข้อความ","vi":"Tin nhắn","id":"Pesan","ms":"Mesej","sv":"Meddelanden","da":"Beskeder","no":"Meldinger","fi":"Viestit","cs":"Zprávy","hu":"Üzenetek","ro":"Mesaje","el":"Μηνύματα","he":"הודעות","tl":"Mga mensahe","hi":"संदेश","bn":"বার্তা","ur":"پیغامات","uk":"Повідомлення","bg":"Съобщения","hr":"Poruke","sk":"Správy","lt":"Žinutės","lv":"Ziņojumi","et":"Sõnumid","sl":"Sporočila","sw":"Ujumbe","af":"Boodskappe","ca":"Missatges","fa":"پیام‌ها","mn":"Зурвас","my":"မက်ဆေ့ခ်ျများ","km":"សារ","pt-BR":"Mensagens"},"faq":{"en":"FAQ","zh":"常见问题","zh-tw":"常見問題","ja":"よくある質問","ko":"FAQ","fr":"FAQ","de":"FAQ","es":"FAQ","pt":"FAQ","it":"FAQ","ru":"FAQ","nl":"FAQ","pl":"FAQ","tr":"SSS","ar":"الأسئلة الشائعة","th":"คำถามที่พบบ่อย","vi":"FAQ","id":"FAQ","ms":"Soalan Lazim","sv":"FAQ","da":"FAQ","no":"FAQ","fi":"UKK","cs":"FAQ","hu":"GYIK","ro":"FAQ","el":"Συχνές ερωτήσεις","he":"שאלות נפוצות","tl":"FAQ","hi":"FAQ","bn":"FAQ","ur":"FAQ","uk":"FAQ","bg":"ЧЗВ","hr":"FAQ","sk":"FAQ","lt":"DUK","lv":"BUJ","et":"KKK","sl":"FAQ","sw":"Maswali","af":"Gereelde vrae","ca":"PMF","fa":"پرسش‌ها","mn":"ТТА","my":"မေးလေ့ရှိသောမေးခွန်းများ","km":"សំណួរញឹកញាប់","pt-BR":"FAQ"},"support":{"en":"Support","zh":"客服","zh-tw":"客服","ja":"サポート","ko":"고객센터","fr":"Support","de":"Support","es":"Soporte","pt":"Suporte","it":"Supporto","ru":"Поддержка","nl":"Ondersteuning","pl":"Wsparcie","tr":"Destek","ar":"الدعم","th":"ฝ่ายบริการ","vi":"Hỗ trợ","id":"Dukungan","ms":"Sokongan","sv":"Support","da":"Support","no":"Brukerstøtte","fi":"Tuki","cs":"Podpora","hu":"Ügyfélszolgálat","ro":"Asistență","el":"Υποστήριξη","he":"תמיכה","tl":"Suporta","hi":"सहायता","bn":"সহায়তা","ur":"سپورٹ","uk":"Підтримка","bg":"Поддръжка","hr":"Podrška","sk":"Podpora","lt":"Pagalba","lv":"Atbalsts","et":"Tugi","sl":"Podpora","sw":"Msaada","af":"Ondersteuning","ca":"Suport","fa":"پشتیبانی","mn":"Тусламж","my":"အကူအညီ","km":"ជំនួយ","pt-BR":"Suporte"},"subscribe":{"en":"Subscribe","zh":"认购","zh-tw":"認購","ja":"応募","ko":"청약","fr":"Souscrire","de":"Zeichnen","es":"Suscribir","pt":"Subscrever","it":"Sottoscrivi","ru":"Подписаться","nl":"Abonneren","pl":"Subskrybuj","tr":"Abone ol","ar":"اكتتاب","th":"สมัครรับ","vi":"Đăng ký","id":"Langganan","ms":"Langgan","sv":"Prenumerera","da":"Abonner","no":"Abonner","fi":"Tilaa","cs":"Odebírat","hu":"Feliratkozás","ro":"Abonați-vă","el":"Εγγραφή","he":"הירשם","tl":"Mag-subscribe","hi":"सदस्यता","bn":"সাবস্ক্রাইব","ur":"سبسکرائب","uk":"Підписатися","bg":"Абониране","hr":"Pretplati se","sk":"Odoberať","lt":"Prenumeruoti","lv":"Abonēt","et":"Telli","sl":"Naroči se","sw":"Jiandikishe","af":"Teken in","ca":"Subscriure","fa":"اشتراک","mn":"Бүртгүүлэх","my":"စာရင်းသွင်း","km":"ជាវ","pt-BR":"Subscrever"},"redeem":{"en":"Redeem","zh":"赎回","zh-tw":"贖回","ja":"償還","ko":"환매","fr":"Racheter","de":"Einlösen","es":"Canjear","pt":"Resgatar","it":"Riscatta","ru":"Погасить","nl":"Inwisselen","pl":"Wykup","tr":"Kullan","ar":"استرداد","th":"ไถ่ถอน","vi":"Chuộc","id":"Tebus","ms":"Tebus","sv":"Lös in","da":"Indløs","no":"Løs inn","fi":"Lunasta","cs":"Uplatnit","hu":"Beváltás","ro":"Răscumpără","el":"Εξαργύρωση","he":"מימוש","tl":"I-redeem","hi":"रिडीम","bn":"রিডিম","ur":"ریڈیم","uk":"Погасити","bg":"Осребряване","hr":"Iskoristi","sk":"Uplatniť","lt":"Išpirkti","lv":"Izpirkt","et":"Lunasta","sl":"Vnovči","sw":"Komboa","af":"Wissel in","ca":"Bescanviar","fa":"بازخرید","mn":"Буцааж авах","my":"ပြန်ရွေး","km":"លោះ","pt-BR":"Resgatar"},"borrow":{"en":"Borrow","zh":"借币","zh-tw":"借幣","ja":"借入","ko":"대출","fr":"Emprunter","de":"Leihen","es":"Prestar","pt":"Emprestar","it":"Prendere in prestito","ru":"Занять","nl":"Lenen","pl":"Pożycz","tr":"Borç al","ar":"اقتراض","th":"ยืม","vi":"Vay","id":"Pinjam","ms":"Pinjam","sv":"Låna","da":"Lån","no":"Lån","fi":"Lainaa","cs":"Půjčit si","hu":"Kölcsönzés","ro":"Împrumută","el":"Δανεισμός","he":"הלוואה","tl":"Humiram","hi":"उधार लें","bn":"ধার","ur":"ادھار","uk":"Позичити","bg":"Заемане","hr":"Posudi","sk":"Požičať si","lt":"Pasiskolinti","lv":"Aizņemties","et":"Laena","sl":"Izposodi","sw":"Kopa","af":"Leen","ca":"Prestar","fa":"وام گرفتن","mn":"Зээлэх","my":"ချေးယူရန်","km":"ខ្ចី","pt-BR":"Emprestar"},"repay":{"en":"Repay","zh":"还币","zh-tw":"還幣","ja":"返済","ko":"상환","fr":"Rembourser","de":"Zurückzahlen","es":"Reembolsar","pt":"Reembolsar","it":"Rimborsa","ru":"Погасить","nl":"Terugbetalen","pl":"Spłać","tr":"Geri öde","ar":"سداد","th":"คืนเงิน","vi":"Trả nợ","id":"Bayar","ms":"Bayar balik","sv":"Återbetala","da":"Tilbagebetal","no":"Tilbakebetal","fi":"Maksa takaisin","cs":"Splatiť","hu":"Visszafizetés","ro":"Rambursează","el":"Αποπληρωμή","he":"החזר","tl":"Magbayad muli","hi":"चुकौती","bn":"পরিশোধ","ur":"ادائیگی","uk":"Погасити","bg":"Възстановяване","hr":"Vrati dug","sk":"Splatiť","lt":"Grąžinti","lv":"Atmaksāt","et":"Tagasta","sl":"Poplačaj","sw":"Lipa tena","af":"Terugbetaal","ca":"Reemborsar","fa":"بازپرداخت","mn":"Төлөх","my":"ပြန်ဆပ်ရန်","km":"សងវិញ","pt-BR":"Reembolsar"},"paste":{"en":"Paste","zh":"粘贴","zh-tw":"貼上","ja":"貼付","ko":"붙여넣기","fr":"Coller","de":"Einfügen","es":"Pegar","pt":"Colar","it":"Incolla","ru":"Вставить","nl":"Plakken","pl":"Wklej","tr":"Yapıştır","ar":"لصق","th":"วาง","vi":"Dán","id":"Tempel","ms":"Tampal","sv":"Klistra in","da":"Indsæt","no":"Lim inn","fi":"Liitä","cs":"Vložit","hu":"Beillesztés","ro":"Lipește","el":"Επικόλληση","he":"הדבק","tl":"I-paste","hi":"पेस्ट","bn":"পেস্ট","ur":"پیسٹ","uk":"Вставити","bg":"Поставяне","hr":"Zalijepi","sk":"Vložiť","lt":"Įklijuoti","lv":"Ielīmēt","et":"Kleebi","sl":"Prilepi","sw":"Bandika","af":"Plak","ca":"Enganxar","fa":"چسباندن","mn":"Буулгах","my":"ကူးထည့်ရန်","km":"បិទភ្ជាប់","pt-BR":"Colar"},"refresh":{"en":"Refresh","zh":"刷新","zh-tw":"重新整理","ja":"更新","ko":"새로고침","fr":"Actualiser","de":"Aktualisieren","es":"Actualizar","pt":"Atualizar","it":"Aggiorna","ru":"Обновить","nl":"Vernieuwen","pl":"Odśwież","tr":"Yenile","ar":"تحديث","th":"รีเฟรช","vi":"Làm mới","id":"Segarkan","ms":"Segarkan","sv":"Uppdatera","da":"Opdater","no":"Oppdater","fi":"Päivitä","cs":"Obnovit","hu":"Frissítés","ro":"Reîmprospătează","el":"Ανανέωση","he":"רענן","tl":"I-refresh","hi":"ताज़ा करें","bn":"রিফ্রেশ","ur":"تازہ کریں","uk":"Оновити","bg":"Обновяване","hr":"Osvježi","sk":"Obnoviť","lt":"Atnaujinti","lv":"Atsvaidzināt","et":"Värskenda","sl":"Osveži","sw":"Pakia upya","af":"Verfris","ca":"Actualitzar","fa":"تازه‌سازی","mn":"Сэргээх","my":"ပြန်လည်စတင်","km":"ផ្ទុកឡើងវិញ","pt-BR":"Atualizar"},"filter":{"en":"Filter","zh":"筛选","zh-tw":"篩選","ja":"絞込","ko":"필터","fr":"Filtrer","de":"Filtern","es":"Filtrar","pt":"Filtrar","it":"Filtra","ru":"Фильтр","nl":"Filteren","pl":"Filtruj","tr":"Filtrele","ar":"تصفية","th":"กรอง","vi":"Lọc","id":"Filter","ms":"Tapis","sv":"Filtrera","da":"Filtrer","no":"Filtrer","fi":"Suodata","cs":"Filtrovat","hu":"Szűrés","ro":"Filtrează","el":"Φίλτρο","he":"סנן","tl":"Salain","hi":"फ़िल्टर","bn":"ফিল্টার","ur":"فلٹر","uk":"Фільтр","bg":"Филтър","hr":"Filtriraj","sk":"Filtrovať","lt":"Filtruoti","lv":"Filtrēt","et":"Filtreeri","sl":"Filtriraj","sw":"Chuja","af":"Filter","ca":"Filtrar","fa":"فیلتر","mn":"Шүүлтүүр","my":"စစ်ထုတ်ရန်","km":"ត្រង","pt-BR":"Filtrar"},"sort":{"en":"Sort","zh":"排序","zh-tw":"排序","ja":"並替","ko":"정렬","fr":"Trier","de":"Sortieren","es":"Ordenar","pt":"Ordenar","it":"Ordina","ru":"Сортировка","nl":"Sorteren","pl":"Sortuj","tr":"Sırala","ar":"ترتيب","th":"เรียงลำดับ","vi":"Sắp xếp","id":"Urutkan","ms":"Susun","sv":"Sortera","da":"Sorter","no":"Sorter","fi":"Lajittele","cs":"Seřadit","hu":"Rendezés","ro":"Sortează","el":"Ταξινόμηση","he":"מיין","tl":"Ayusin","hi":"क्रमबद्ध","bn":"বাছাই","ur":"ترتیب دیں","uk":"Сортувати","bg":"Сортиране","hr":"Poredaj","sk":"Zoradiť","lt":"Rūšiuoti","lv":"Kārtot","et":"Sorteeri","sl":"Razvrsti","sw":"Panga","af":"Sorteer","ca":"Ordenar","fa":"مرتب‌سازی","mn":"Эрэмбэлэх","my":"စီရန်","km":"តម្រៀប","pt-BR":"Ordenar"},"edit":{"en":"Edit","zh":"编辑","zh-tw":"編輯","ja":"編集","ko":"편집","fr":"Modifier","de":"Bearbeiten","es":"Editar","pt":"Editar","it":"Modifica","ru":"Изменить","nl":"Bewerken","pl":"Edytuj","tr":"Düzenle","ar":"تعديل","th":"แก้ไข","vi":"Sửa","id":"Edit","ms":"Edit","sv":"Redigera","da":"Rediger","no":"Rediger","fi":"Muokkaa","cs":"Upravit","hu":"Szerkesztés","ro":"Editează","el":"Επεξεργασία","he":"ערוך","tl":"I-edit","hi":"संपादित करें","bn":"সম্পাদনা","ur":"ترمیم","uk":"Змінити","bg":"Редактиране","hr":"Uredi","sk":"Upraviť","lt":"Redaguoti","lv":"Rediģēt","et":"Muuda","sl":"Uredi","sw":"Hariri","af":"Wysig","ca":"Editar","fa":"ویرایش","mn":"Засах","my":"ပြင်ဆင်ရန်","km":"កែសម្រួល","pt-BR":"Editar"},"delete":{"en":"Delete","zh":"删除","zh-tw":"刪除","ja":"削除","ko":"삭제","fr":"Supprimer","de":"Löschen","es":"Eliminar","pt":"Excluir","it":"Elimina","ru":"Удалить","nl":"Verwijderen","pl":"Usuń","tr":"Sil","ar":"حذف","th":"ลบ","vi":"Xóa","id":"Hapus","ms":"Padam","sv":"Radera","da":"Slet","no":"Slett","fi":"Poista","cs":"Smazat","hu":"Törlés","ro":"Șterge","el":"Διαγραφή","he":"מחק","tl":"Tanggalin","hi":"हटाएं","bn":"মুছুন","ur":"حذف کریں","uk":"Видалити","bg":"Изтриване","hr":"Obriši","sk":"Zmazať","lt":"Ištrinti","lv":"Dzēst","et":"Kustuta","sl":"Izbriši","sw":"Futa","af":"Skrap","ca":"Suprimir","fa":"حذف","mn":"Устгах","my":"ဖျက်ရန်","km":"លុប","pt-BR":"Excluir"},"confirm":{"en":"Confirm","zh":"确认","zh-tw":"確認","ja":"確認","ko":"확인","fr":"Confirmer","de":"Bestätigen","es":"Confirmar","pt":"Confirmar","it":"Conferma","ru":"Подтвердить","nl":"Bevestigen","pl":"Potwierdź","tr":"Onayla","ar":"تأكيد","th":"ยืนยัน","vi":"Xác nhận","id":"Konfirmasi","ms":"Sahkan","sv":"Bekräfta","da":"Bekræft","no":"Bekreft","fi":"Vahvista","cs":"Potvrdit","hu":"Megerősítés","ro":"Confirmă","el":"Επιβεβαίωση","he":"אשר","tl":"Kumpirmahin","hi":"पुष्टि करें","bn":"নিশ্চিত করুন","ur":"تصدیق کریں","uk":"Підтвердити","bg":"Потвърждение","hr":"Potvrdi","sk":"Potvrdiť","lt":"Patvirtinti","lv":"Apstiprināt","et":"Kinnita","sl":"Potrdi","sw":"Thibitisha","af":"Bevestig","ca":"Confirmar","fa":"تایید","mn":"Батлах","my":"အတည်ပြုရန်","km":"បញ្ជាក់","pt-BR":"Confirmar"},"save":{"en":"Save","zh":"保存","zh-tw":"儲存","ja":"保存","ko":"저장","fr":"Enregistrer","de":"Speichern","es":"Guardar","pt":"Salvar","it":"Salva","ru":"Сохранить","nl":"Opslaan","pl":"Zapisz","tr":"Kaydet","ar":"حفظ","th":"บันทึก","vi":"Lưu","id":"Simpan","ms":"Simpan","sv":"Spara","da":"Gem","no":"Lagre","fi":"Tallenna","cs":"Uložit","hu":"Mentés","ro":"Salvează","el":"Αποθήκευση","he":"שמור","tl":"I-save","hi":"सहेजें","bn":"সংরক্ষণ","ur":"محفوظ کریں","uk":"Зберегти","bg":"Запазване","hr":"Spremi","sk":"Uložiť","lt":"Išsaugoti","lv":"Saglabāt","et":"Salvesta","sl":"Shrani","sw":"Hifadhi","af":"Stoor","ca":"Desar","fa":"ذخیره","mn":"Хадгалах","my":"သိမ်းဆည်းရန်","km":"រក្សាទុក","pt-BR":"Salvar"},"submit":{"en":"Submit","zh":"提交","zh-tw":"提交","ja":"送信","ko":"제출","fr":"Soumettre","de":"Absenden","es":"Enviar","pt":"Enviar","it":"Invia","ru":"Отправить","nl":"Verzenden","pl":"Wyślij","tr":"Gönder","ar":"إرسال","th":"ส่ง","vi":"Gửi","id":"Kirim","ms":"Hantar","sv":"Skicka","da":"Indsend","no":"Send inn","fi":"Lähetä","cs":"Odeslat","hu":"Beküldés","ro":"Trimite","el":"Υποβολή","he":"שלח","tl":"Isumite","hi":"जमा करें","bn":"জমা দিন","ur":"جمع کروائیں","uk":"Надіслати","bg":"Изпращане","hr":"Pošalji","sk":"Odoslať","lt":"Pateikti","lv":"Iesniegt","et":"Esita","sl":"Oddaj","sw":"Wasilisha","af":"Dien in","ca":"Enviar","fa":"ارسال","mn":"Илгээх","my":"တင်သွင်းရန်","km":"ដាក់ស្នើ","pt-BR":"Enviar"},"closeAction":{"en":"Close","zh":"关闭","zh-tw":"關閉","ja":"閉じる","ko":"닫기","fr":"Fermer","de":"Schließen","es":"Cerrar","pt":"Fechar","it":"Chiudi","ru":"Закрыть","nl":"Sluiten","pl":"Zamknij","tr":"Kapat","ar":"إغلاق","th":"ปิด","vi":"Đóng","id":"Tutup","ms":"Tutup","sv":"Stäng","da":"Luk","no":"Lukk","fi":"Sulje","cs":"Zavřít","hu":"Bezárás","ro":"Închide","el":"Κλείσιμο","he":"סגור","tl":"Isara","hi":"बंद करें","bn":"বন্ধ করুন","ur":"بند کریں","uk":"Закрити","bg":"Затваряне","hr":"Zatvori","sk":"Zavrieť","lt":"Uždaryti","lv":"Aizvērt","et":"Sulge","sl":"Zapri","sw":"Funga","af":"Sluit","ca":"Tancar","fa":"بستن","mn":"Хаах","my":"ပိတ်ရန်","km":"បិទ","pt-BR":"Fechar"},"back":{"en":"Back","zh":"返回","zh-tw":"返回","ja":"戻る","ko":"뒤로","fr":"Retour","de":"Zurück","es":"Volver","pt":"Voltar","it":"Indietro","ru":"Назад","nl":"Terug","pl":"Wróć","tr":"Geri","ar":"رجوع","th":"กลับ","vi":"Quay lại","id":"Kembali","ms":"Kembali","sv":"Tillbaka","da":"Tilbage","no":"Tilbake","fi":"Takaisin","cs":"Zpět","hu":"Vissza","ro":"Înapoi","el":"Πίσω","he":"חזרה","tl":"Bumalik","hi":"वापस","bn":"ফিরে যান","ur":"واپس","uk":"Назад","bg":"Назад","hr":"Natrag","sk":"Späť","lt":"Atgal","lv":"Atpakaļ","et":"Tagasi","sl":"Nazaj","sw":"Rudi","af":"Terug","ca":"Enrere","fa":"بازگشت","mn":"Буцах","my":"နောက်သို့","km":"ត្រឡប់ក្រោយ","pt-BR":"Voltar"},"next":{"en":"Next","zh":"下一步","zh-tw":"下一步","ja":"次へ","ko":"다음","fr":"Suivant","de":"Weiter","es":"Siguiente","pt":"Avançar","it":"Avanti","ru":"Далее","nl":"Volgende","pl":"Dalej","tr":"İleri","ar":"التالي","th":"ถัดไป","vi":"Tiếp theo","id":"Lanjut","ms":"Seterusnya","sv":"Nästa","da":"Næste","no":"Neste","fi":"Seuraava","cs":"Další","hu":"Következő","ro":"Următorul","el":"Επόμενο","he":"הבא","tl":"Susunod","hi":"आगे","bn":"পরবর্তী","ur":"اگلا","uk":"Далі","bg":"Напред","hr":"Dalje","sk":"Ďalej","lt":"Kitas","lv":"Tālāk","et":"Edasi","sl":"Naprej","sw":"Ifuatayo","af":"Volgende","ca":"Següent","fa":"بعدی","mn":"Дараах","my":"နောက်တစ်ခု","km":"បន្ទាប់","pt-BR":"Avançar"},"done":{"en":"Done","zh":"完成","zh-tw":"完成","ja":"完了","ko":"완료","fr":"Terminé","de":"Fertig","es":"Listo","pt":"Concluído","it":"Fatto","ru":"Готово","nl":"Klaar","pl":"Gotowe","tr":"Tamam","ar":"تم","th":"เสร็จสิ้น","vi":"Xong","id":"Selesai","ms":"Selesai","sv":"Klar","da":"Færdig","no":"Ferdig","fi":"Valmis","cs":"Hotovo","hu":"Kész","ro":"Gata","el":"Έγινε","he":"בוצע","tl":"Tapos na","hi":"पूर्ण","bn":"সম্পন্ন","ur":"مکمل","uk":"Готово","bg":"Готово","hr":"Gotovo","sk":"Hotovo","lt":"Atlikta","lv":"Gatavs","et":"Valmis","sl":"Končano","sw":"Imekamilika","af":"Klaar","ca":"Fet","fa":"انجام شد","mn":"Дууссан","my":"ပြီးပြီ","km":"រួចរាល់","pt-BR":"Concluído"},"retry":{"en":"Retry","zh":"重试","zh-tw":"重試","ja":"再試行","ko":"재시도","fr":"Réessayer","de":"Wiederholen","es":"Reintentar","pt":"Tentar novamente","it":"Riprova","ru":"Повторить","nl":"Opnieuw","pl":"Ponów","tr":"Tekrar dene","ar":"إعادة","th":"ลองใหม่","vi":"Thử lại","id":"Coba lagi","ms":"Cuba lagi","sv":"Försök igen","da":"Prøv igen","no":"Prøv igjen","fi":"Yritä uudelleen","cs":"Zkusit znovu","hu":"Újra","ro":"Reîncearcă","el":"Δοκιμάστε ξανά","he":"נסה שוב","tl":"Subukan muli","hi":"पुनः प्रयास","bn":"পুনরায় চেষ্টা","ur":"دوبارہ کوشش","uk":"Повторити","bg":"Повторен опит","hr":"Pokušaj ponovo","sk":"Skúsiť znova","lt":"Bandyti dar","lv":"Mēģināt vēlreiz","et":"Proovi uuesti","sl":"Poskusi znova","sw":"Jaribu tena","af":"Probeer weer","ca":"Reintentar","fa":"تلاش مجدد","mn":"Дахин оролдох","my":"ထပ်စမ်းရန်","km":"ព្យាយាមម្តងទៀត","pt-BR":"Tentar novamente"},"download":{"en":"Download","zh":"下载","zh-tw":"下載","ja":"DL","ko":"다운로드","fr":"Télécharger","de":"Herunterladen","es":"Descargar","pt":"Baixar","it":"Scarica","ru":"Скачать","nl":"Downloaden","pl":"Pobierz","tr":"İndir","ar":"تنزيل","th":"ดาวน์โหลด","vi":"Tải xuống","id":"Unduh","ms":"Muat turun","sv":"Ladda ner","da":"Hent","no":"Last ned","fi":"Lataa","cs":"Stáhnout","hu":"Letöltés","ro":"Descarcă","el":"Λήψη","he":"הורד","tl":"I-download","hi":"डाउनलोड","bn":"ডাউনলোড","ur":"ڈاؤن لوڈ","uk":"Завантажити","bg":"Изтегляне","hr":"Preuzmi","sk":"Stiahnuť","lt":"Atsisiųsti","lv":"Lejupielādēt","et":"Laadi alla","sl":"Prenesi","sw":"Pakua","af":"Aflaai","ca":"Descarregar","fa":"دانلود","mn":"Татах","my":"ဒေါင်းလုဒ်","km":"ទាញយក","pt-BR":"Baixar"},"claim":{"en":"Claim","zh":"领取","zh-tw":"領取","ja":"受取","ko":"수령","fr":"Réclamer","de":"Beanspruchen","es":"Reclamar","pt":"Resgatar","it":"Riscatta","ru":"Забрать","nl":"Claimen","pl":"Odbierz","tr":"Talep et","ar":"استلام","th":"รับ","vi":"Nhận","id":"Klaim","ms":"Tuntut","sv":"Hämta","da":"Gør krav","no":"Gjør krav","fi":"Lunasta","cs":"Vyzvednout","hu":"Átvétel","ro":"Revendică","el":"Διεκδίκηση","he":"דרוש","tl":"Kunin","hi":"प्राप्त करें","bn":"দাবি করুন","ur":"حاصل کریں","uk":"Забрати","bg":"Вземи","hr":"Preuzmi","sk":"Prevziať","lt":"Atsiimti","lv":"Saņemt","et":"Võta välja","sl":"Prevzemi","sw":"Dai","af":"Eis","ca":"Reclamar","fa":"دریافت","mn":"Авах","my":"ရယူရန်","km":"ទាមទារ","pt-BR":"Resgatar"},"copyText":{"en":"Copy","zh":"复制","zh-tw":"複製","ja":"コピー","ko":"복사","fr":"Copier","de":"Kopieren","es":"Copiar","pt":"Copiar","it":"Copia","ru":"Копировать","nl":"Kopiëren","pl":"Kopiuj","tr":"Kopyala","ar":"نسخ","th":"คัดลอก","vi":"Sao chép","id":"Salin","ms":"Salin","sv":"Kopiera","da":"Kopier","no":"Kopier","fi":"Kopioi","cs":"Kopírovat","hu":"Másolás","ro":"Copiere","el":"Αντιγραφή","he":"העתק","tl":"Kopyahin","hi":"कॉपी","bn":"কপি","ur":"کاپی","uk":"Копіювати","bg":"Копиране","hr":"Kopiraj","sk":"Kopírovať","lt":"Kopijuoti","lv":"Kopēt","et":"Kopeeri","sl":"Kopiraj","sw":"Nakili","af":"Kopieer","ca":"Copiar","fa":"کپی","mn":"Хуулах","my":"ကူးရန်","km":"ចម្លង","pt-BR":"Copiar"},"importAction":{"en":"Import","zh":"导入","zh-tw":"匯入","ja":"取込","ko":"가져오기","fr":"Importer","de":"Importieren","es":"Importar","pt":"Importar","it":"Importa","ru":"Импорт","nl":"Importeren","pl":"Importuj","tr":"İçe aktar","ar":"استيراد","th":"นำเข้า","vi":"Nhập","id":"Impor","ms":"Import","sv":"Importera","da":"Importere","no":"Importere","fi":"Tuoda","cs":"Importovat","hu":"Importálás","ro":"Import","el":"Εισαγωγή","he":"ייבוא","tl":"Mag-import","hi":"आयात","bn":"আমদানি","ur":"درآمد","uk":"Імпорт","bg":"Импортиране","hr":"Uvoz","sk":"Importovať","lt":"Importuoti","lv":"Importēt","et":"Importi","sl":"Uvozi","sw":"Ingiza","af":"Invoer","ca":"Importar","fa":"واردات","mn":"Импорт","my":"သွင်းကုန်","km":"នាំចូល","pt-BR":"Importar"},"connect":{"en":"Connect","zh":"连接","zh-tw":"連接","ja":"接続","ko":"연결","fr":"Connecter","de":"Verbinden","es":"Conectar","pt":"Conectar","it":"Connetti","ru":"Подключить","nl":"Verbinden","pl":"Połącz","tr":"Bağla","ar":"ربط","th":"เชื่อมต่อ","vi":"Kết nối","id":"Hubungkan","ms":"Sambung","sv":"Anslut","da":"Forbind","no":"Koble til","fi":"Yhdistä","cs":"Připojit","hu":"Csatlakozás","ro":"Conectare","el":"Σύνδεση","he":"התחבר","tl":"Kumonekta","hi":"कनेक्ट","bn":"সংযোগ","ur":"مربوط","uk":"Підключити","bg":"Свързване","hr":"Poveži","sk":"Pripojiť","lt":"Prisijungti","lv":"Pievienoties","et":"Ühenda","sl":"Poveži","sw":"Unganisha","af":"Koppel","ca":"Connectar","fa":"اتصال","mn":"Холбох","my":"ချိတ်ဆက်ပါ","km":"ភ្ជាប់","pt-BR":"Conectar"},"exportAction":{"en":"Export","zh":"导出","zh-tw":"匯出","ja":"出力","ko":"내보내기","fr":"Exporter","de":"Exportieren","es":"Exportar","pt":"Exportar","it":"Esporta","ru":"Экспорт","nl":"Exporteren","pl":"Eksportuj","tr":"Dışa aktar","ar":"تصدير","th":"ส่งออก","vi":"Xuất","id":"Ekspor","ms":"Eksport","sv":"Exportera","da":"Eksportere","no":"Eksportere","fi":"Viedä","cs":"Exportovat","hu":"Exportálás","ro":"Export","el":"Εξαγωγή","he":"ייצוא","tl":"I-export","hi":"निर्यात","bn":"রপ্তানি","ur":"برآمد","uk":"Експорт","bg":"Експортиране","hr":"Izvoz","sk":"Exportovať","lt":"Eksportuoti","lv":"Eksportēt","et":"Ekspordi","sl":"Izvozi","sw":"Hamisha","af":"Uitvoer","ca":"Exportar","fa":"صادرات","mn":"Экспорт","my":"တင်ပို့ရန်","km":"នាំចេញ","pt-BR":"Exportar"}};
+      const ALIASES = {"copy":["跟单","跟单交易","一键跟单","立即跟单","开始跟单"],"order":["下单","立即下单","快速下单"],"close":["平仓","立即平仓"],"closeAll":["全部平仓","一键平仓"],"open":["开仓","立即开仓"],"add":["加仓"],"reduce":["减仓"],"positions":["持仓","当前持仓"],"cancel":["撤单","撤销","取消"],"deposit":["充值","充币"],"withdraw":["提现","提币"],"transfer":["划转"],"stake":["质押","质押借币"],"swap":["闪兑","快速兑换","兑换"],"subscribe":["认购","申购"],"redeem":["赎回"],"borrow":["借币","借贷"],"repay":["还币","还款"],"buy":["购买","买入","立即购买","去购买"],"sell":["出售","卖出","立即出售","去出售"],"checkout":["结算","去结算","立即结算"],"details":["查看详情","查看详细","看详情","详情","明细","交易明细"],"more":["查看更多","看更多","更多"],"pay":["立即支付","去支付","支付"],"login":["登录","立即登录"],"logout":["退出","退出登录"],"register":["注册","立即注册"],"search":["搜索"],"clear":["清空"],"reset":["重置"],"copyText":["复制"],"paste":["粘贴"],"refresh":["刷新"],"filter":["筛选"],"sort":["排序"],"edit":["编辑"],"delete":["删除"],"confirm":["确认"],"save":["保存"],"submit":["提交"],"closeAction":["关闭"],"back":["返回"],"next":["下一步"],"done":["完成"],"retry":["重试"],"download":["下载"],"importAction":["导入"],"exportAction":["导出"],"claim":["领取"],"assets":["资产"],"orders":["订单"],"wallet":["钱包"],"help":["帮助"],"security":["安全"],"devices":["设备"],"history":["历史","记录","充提","充提记录"],"earnings":["收益"],"favorites":["收藏"],"following":["关注"],"followers":["粉丝"],"coupons":["优惠券","卡券"],"authorize":["授权"],"boost":["加速"],"share":["分享"],"invite":["邀请","邀请好友"],"settings":["设置","系统设置"],"profile":["个人资料","个人中心"],"messages":["消息","我的消息","消息中心"],"faq":["常见问题"],"support":["客服","联系客服","在线客服"],"connect":["连接","连接钱包","绑定钱包"]};
+      const ENGLISH_ALIASES = {"copy":["copy","copy trade","copy trading","follow trade","follow trading","copy trades","follow orders","follow traders","copy orders","1-click copy","one-click copy","instant copy","start copy","copy now"],"order":["order","orders","place order","make order","submit order","create order","place an order","instant order","quick order","order now","buy order","place orders"],"close":["close","close position","close positions","exit trade","exit position"],"closeAll":["close all","close all positions","exit all","close all trades","one-click close all","1-click close all"],"open":["open","open position","open positions","open trade","new position","start position"],"add":["add","add position","add margin","increase position"],"reduce":["reduce","reduce position","decrease position","partial close"],"positions":["position","positions","my positions","current positions","open positions"],"cancel":["cancel","cancel order","cancel orders","revoke","revoke order"],"deposit":["deposit","deposit funds","deposit crypto","make deposit","crypto deposit"],"withdraw":["withdraw","withdrawal","withdraw funds","withdraw crypto","make withdrawal"],"transfer":["transfer","transfer funds","make transfer","internal transfer"],"stake":["stake","staking","stake tokens","stake crypto"],"swap":["swap","quick swap","exchange","instant swap","token swap","crypto swap"],"subscribe":["subscribe","subscription","apply","apply now"],"redeem":["redeem","redemption","cash out"],"borrow":["borrow","loan","borrow crypto","crypto loan"],"repay":["repay","repayment","pay back"],"buy":["buy","purchase","buy now","instant buy","buy crypto","buy tokens","quick buy"],"sell":["sell","sell now","instant sell","sell crypto","sell tokens","quick sell"],"checkout":["checkout","proceed to checkout","go to checkout","pay checkout"],"details":["details","view details","see details","show details","check details","more details","information","view detail","see detail","detail info"],"more":["more","view more","see more","show more","learn more","read more"],"pay":["pay","pay now","make payment","proceed to pay","payment","instant pay"],"login":["login","log in","sign in","signin","log into account"],"logout":["logout","log out","sign out","signout"],"register":["register","registration","sign up","signup","create account","open account"],"search":["search","search now"],"clear":["clear","clear all","clear input","clear history"],"reset":["reset","reset all","reset form","reset filters"],"copyText":["copy text","copy to clipboard","copy link","copy code"],"paste":["paste","paste text"],"refresh":["refresh","reload","refresh page","refresh data"],"filter":["filter","filters","filter by"],"sort":["sort","sort by","order by"],"edit":["edit","modify","change"],"delete":["delete","remove","trash"],"confirm":["confirm","confirmation","please confirm","confirm now"],"save":["save","save changes","save now"],"submit":["submit","submit now","send"],"closeAction":["close window","dismiss","close dialog"],"back":["back","go back","return"],"next":["next","continue","proceed","next step"],"done":["done","finish","completed"],"retry":["retry","try again","retry now"],"download":["download","download app","download file"],"importAction":["import","import data","import file"],"exportAction":["export","export data","export file"],"claim":["claim","claim now","free claim","collect","collect now","claim rewards"],"assets":["assets","total assets","my assets","crypto assets"],"orders":["orders","order history","my orders"],"wallet":["wallet","my wallet","crypto wallet"],"help":["help","help center","faq & help"],"security":["security","security center","safety"],"devices":["devices","device management","my devices"],"history":["history","transaction history","records","activity history"],"earnings":["earnings","rewards","income","my earnings"],"favorites":["favorites","watchlist","starred","my favorites"],"following":["following","my following"],"followers":["followers","my followers"],"coupons":["coupons","vouchers","my coupons"],"authorize":["authorize","authorization","grant access"],"boost":["boost","accelerate","speed up"],"share":["share","share now","share link"],"invite":["invite","invite friends","referral","invite now"],"settings":["settings","preferences","system settings"],"profile":["profile","account profile","user profile","my profile"],"messages":["messages","notifications","inbox","my messages"],"faq":["faq","faqs","frequently asked questions"],"support":["support","customer support","contact support","online support","live chat"],"connect":["connect","connect wallet","link wallet","bind wallet"]};
+
+      const sourceFallback = {};
+      for (const [concept, aliases] of Object.entries(ALIASES)) {
+        const map = C48[concept];
+        if (map) {
+          for (const alias of aliases) {
+            sourceFallback[alias] = map;
+          }
+        }
+      }
+
+      const englishFallback = {};
+      for (const [concept, aliases] of Object.entries(ENGLISH_ALIASES)) {
+        const map = C48[concept];
+        if (map) {
+          for (const alias of aliases) {
+            englishFallback[alias.toLowerCase()] = map;
+          }
+        }
+      }
+
+      return {
+        // Safety whitelist: Do not collapse critical financial and numerical metrics
+        protectedMetrics: new Set([
+          'total price', 'unit price', 'available balance', 'total balance',
+          'stop loss', 'take profit', 'trading volume', 'market cap',
+          'gas fee', 'slippage tolerance', 'order book', 'margin ratio',
+          'liquidation price', 'entry price', 'mark price', 'index price',
+          'funding rate', 'unrealized pnl', 'realized pnl', 'interest rate',
+          'estimated fee', 'network fee', '24h volume', '24h high', '24h low',
+          'prix total', 'solde disponible', 'gesamtpreis', 'verfügbares guthaben',
+          'precio total', 'saldo disponible', 'общая цена', 'доступный баланс',
+          'prix de liquidation', 'taux de financement', 'frais estimés',
+          'liquidationspreis', 'finanzierungssatz', 'geschätzte gebühr',
+          'precio de liquidación', 'tasa de financiación', 'tarifa estimada',
+          'цена ликвидации', 'ставка финансирования', 'расчетная комиссия'
+        ]),
+
+        sourceFallback,
+        englishFallback,
+
+        resolvePreferred(targetMap, targetLang) {
+          if (!targetMap) return null;
+          const langCode = (targetLang || '').toLowerCase();
+          const langKey = langCode.slice(0, 2);
+          const isZhTw = langCode.startsWith('zh-tw') || langCode.startsWith('zh-hk') || langCode.startsWith('zh-hant');
+
+          if (isZhTw) {
+            return targetMap['zh-tw'] || targetMap['zh-TW'] || targetMap['zh_tw'] || targetMap['zh'];
+          }
+          let res = targetMap[targetLang] || targetMap[langCode] || targetMap[langKey];
+          if (res) return res;
+          if (langCode.startsWith('pt')) return targetMap['pt'] || targetMap['pt-BR'];
+          return null;
+        },
+
+        // Recursive source normalizer: strips prefixes and suffixes to match core base words (supports Chinese & English)
+        normalizeSource(origText) {
+          if (!origText || typeof origText !== 'string') return '';
+          const clean = origText.trim().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+          if (!clean) return '';
+
+          // 1. Direct hit in Chinese sourceFallback or exact match
+          if (this.sourceFallback[clean]) return clean;
+
+          // 2. Direct hit in English fallback
+          const lower = clean.toLowerCase();
+          if (this.englishFallback && this.englishFallback[lower]) return lower;
+
+          // 3. Chinese operational prefixes: 一键, 快速, 极速, 火速, 立即, 马上, 随时, 前往, 去, 开始, 启动, 点击, 按此, 免费, 智能, AI
+          const zhPrefixRx = /^(?:一键|快速|极速|火速|立即|马上|随时|前往|去|开始|启动|点击|按此|免费|智能|AI)\s*/i;
+          let strippedZh = clean.replace(zhPrefixRx, '');
+          if (strippedZh && this.sourceFallback[strippedZh]) return strippedZh;
+
+          // 4. Chinese possessive prefixes: 我的, 我的个人, 个人
+          const zhPossRx = /^(?:我的|我的个人|个人)\s*/i;
+          strippedZh = strippedZh.replace(zhPossRx, '');
+          if (strippedZh && this.sourceFallback[strippedZh]) return strippedZh;
+
+          // 5. Chinese container suffixes: 中心, 管理, 设置, 入口, 按钮, 页面, 记录, 明细, 历史, 列表
+          const zhSuffixRx = /\s*(?:中心|管理|设置|入口|按钮|页面|记录|明细|历史|列表)$/i;
+          strippedZh = strippedZh.replace(zhSuffixRx, '');
+          if (strippedZh && this.sourceFallback[strippedZh]) return strippedZh;
+
+          // 6. English operational & polite prefixes:
+          // One-click, 1-click, Click to, Tap to, Press to, Quick, Fast, Instant, Direct, Smart, AI, Auto, Free, Complimentary, Please, Kindly
+          const enPrefixRx = /^(?:One-click|1-click|One click|Click to|Tap to|Press to|Quick|Fast|Instant|Direct|Smart|AI|Auto|Free|Complimentary|Please|Kindly)\s+/i;
+          let strippedEn = clean.replace(enPrefixRx, '').trim();
+          if (strippedEn) {
+            let enLow = strippedEn.toLowerCase();
+            if (this.englishFallback && this.englishFallback[enLow]) return enLow;
+          }
+
+          // 7. English possessives & articles: My, The, A, An
+          const enPossRx = /^(?:My|The|An?)\s+/i;
+          strippedEn = strippedEn.replace(enPossRx, '').trim();
+          if (strippedEn) {
+            let enLow = strippedEn.toLowerCase();
+            if (this.englishFallback && this.englishFallback[enLow]) return enLow;
+          }
+
+          // 8. English temporal suffixes: Now, Immediately, Today
+          const enSuffixRx = /\s+(?:Now|Immediately|Today)$/i;
+          strippedEn = strippedEn.replace(enSuffixRx, '').trim();
+          if (strippedEn) {
+            let enLow = strippedEn.toLowerCase();
+            if (this.englishFallback && this.englishFallback[enLow]) return enLow;
+          }
+
+          // 9. English container suffixes: Center, Management, Settings, Page, Button, List
+          const enContainerRx = /\s+(?:Center|Management|Settings|Page|Button|List)$/i;
+          strippedEn = strippedEn.replace(enContainerRx, '').trim();
+          if (strippedEn) {
+            let enLow = strippedEn.toLowerCase();
+            if (this.englishFallback && this.englishFallback[enLow]) return enLow;
+          }
+
+          // Return cleaned English phrase if stripped
+          if (strippedEn && strippedEn.length < clean.length) {
+            return strippedEn;
+          }
+
+          return clean;
+        },
+
+        // Direct 48-language resolution fast-path (both Chinese & English sources)
+        resolveDirect(origText, targetLang) {
+          if (!origText || typeof origText !== 'string') return null;
+          const norm = this.normalizeSource(origText);
+          if (norm) {
+            if (this.sourceFallback && this.sourceFallback[norm]) {
+              return this.resolvePreferred(this.sourceFallback[norm], targetLang);
+            }
+            const lower = norm.toLowerCase();
+            if (this.englishFallback && this.englishFallback[lower]) {
+              return this.resolvePreferred(this.englishFallback[lower], targetLang);
+            }
+          }
+          return null;
+        },
+
+        // Universal multi-lingual fluff stripping (covers Nordic, Slavic, Romance, Eastern Europe, Middle East, Asia)
+        universalFluffPatterns: [
+          // 1. One-click / 1-click prefixes in all language families
+          { pattern: /^(?:Ett klick för att|Et klik for at|Ett klikk for å|Yhdellä napsautuksella|Jedním kliknutím|Egy kattintás a|Un clic pentru a|Ένα κλικ για να|בלחיצה אחת|एक क्लिक में|Один клік для|Едно кликване|Jednim klikom|Jedným kliknutím|Vienu paspaudimu|Un clic per|Tek tıkla|1\s*tıkla|1-klik|1 clique|1-clic|1 clic|One-click|1-click)\s*/gui, replacement: '' },
+
+          // 2. Polite prefixes in any language
+          { pattern: /^(?:Vänligen|Snälla|Vennligst|Ole hyvä ja|Prosím|Kérjük|Vă rugăm|Te rog|Παρακαλώ|Будь ласка|אנא|בבקשה|कृपया|Silakan|Tolong)\s*/gui, replacement: '' },
+
+          // 3. Possessives (My/Your) across Scandinavian, Slavic, Romance, Greek, Ukrainian
+          { pattern: /^(?:Min|Mitt|Mina|Minun|Oma|Můj|Moje|Môj|Saját|Meu|Mea|Μου|Мій|Моя|Моє|Мої)\s+/gui, replacement: '' },
+
+          // 4. "View Details" to "Details" across languages
+          { pattern: /^(?:Visa|Vis|Se|Näytä|Zobrazit|Zobraziť|Afișează|Προβολή|Переглянути|הצג)\s+(detaljer|tiedot|podrobnosti|detalii|λεπτομέρειες|деталі|פרטים)$/gui, replacement: '$1' },
+
+          // 5. "Copy trading/deals/orders" to "Copy" across languages
+          { pattern: /^(Kopiera|Kopier|Kopiere|Kopioi|Kopírovat|Másolás|Copiere|Αντιγραφή|העתק|Копіювати|Копиране|Kopiraj)\s+(?:handel|handeln|ordrer|bestillinger|tilauksia|obchody|obchodování|kereskedés|tranzacții|συναλλαγών|угоди|поръчки|naredbe)$/gui, replacement: '$1' },
+
+          // 6. Persian polite suffix
+          { pattern: /^(کپی|خرید|فروش|ثبت|ورود)\s+کنید$/gu, replacement: '$1' }
+        ],
+
+        fluffPatterns: {
+          zh: [
+            { pattern: /^(?:请您务必|请您|请|建议您|麻烦您)\s*/g, replacement: '' },
+            { pattern: /^(?:点击此处|点击这里|点击|单击|双击|长按|前往|前往查看)\s*/g, replacement: '' },
+            { pattern: /^(?:您是否确定要|您确定要|确认要|是否确认要|是否确认)\s*(.*?)[？?]?$/g, replacement: '确认$1？' },
+            { pattern: /(?:您的|我的)(账号|账户|密码|邮箱|手机号|信息|地址|设置|个人资料|订单|购物车)/g, replacement: '$1' },
+            { pattern: /查看更多详细内容/g, replacement: '查看更多' },
+            { pattern: /个人隐私信息保护政策/g, replacement: '隐私政策' },
+            { pattern: /用户使用服务条款与协议/g, replacement: '用户协议' },
+            { pattern: /通过\s*Google\s*账号继续/gi, replacement: 'Google 登录' },
+            { pattern: /通过\s*Apple\s*账号继续/gi, replacement: 'Apple 登录' },
+            { pattern: /同意并继续进行下一步/g, replacement: '同意并继续' },
+            { pattern: /确认并提交申请/g, replacement: '确认提交' },
+            { pattern: /^(?:点击)?(?:查看详情|查看详细|看详情)$/g, replacement: '详情' },
+            { pattern: /^(?:查看订单|查看我的订单)$/g, replacement: '订单' },
+            { pattern: /^(?:立即支付|前往支付|进行支付)$/g, replacement: '支付' },
+            { pattern: /^(?:立即跟单|开始跟单|一键跟单)$/g, replacement: '跟单' },
+            { pattern: /^(?:立即下单|快速下单)$/g, replacement: '下单' },
+            { pattern: /^(?:全部平仓|立即平仓)$/g, replacement: '平仓' },
+            { pattern: /^(?:查看历史|历史记录)$/g, replacement: '历史' },
+            { pattern: /^(?:立即购买|去购买)$/g, replacement: '购买' },
+            { pattern: /^(?:立即出售|去出售)$/g, replacement: '出售' },
+            { pattern: /^(?:去结算|立即结算)$/g, replacement: '结算' },
+            { pattern: /^(?:连接钱包|绑定钱包)$/g, replacement: '连接' }
+          ],
+          en: [
+            { pattern: /^(?:please|kindly)\s+/gi, replacement: '' },
+            { pattern: /^(?:you\s+(?:can|may|must|need\s+to|should)\s+)/gi, replacement: '' },
+            { pattern: /^(?:how\s+to\s+)/gi, replacement: '' },
+            { pattern: /^(?:click\s+(?:here\s+)?to|tap\s+(?:here\s+)?to|press\s+to)\s+/gi, replacement: '' },
+            { pattern: /^in\s+order\s+to\s+/gi, replacement: 'To ' },
+            { pattern: /^(?:are\s+you\s+sure\s+(?:you\s+want\s+)?to)\s+(.*?)[?]?$/gi, replacement: 'Confirm $1?' },
+            { pattern: /\b(?:your|my)\s+(account|password|email|phone|settings|profile|order|orders|cart|address)\b/gi, replacement: '$1' },
+            { pattern: /(?<!\p{L})Terms and Conditions(?!\p{L})/gui, replacement: 'Terms' },
+            { pattern: /(?<!\p{L})Privacy Policy Statement(?!\p{L})/gui, replacement: 'Privacy Policy' },
+            { pattern: /(?<!\p{L})Continue with Google Account(?!\p{L})/gui, replacement: 'Continue with Google' },
+            { pattern: /(?<!\p{L})Agree and Continue to next step(?!\p{L})/gui, replacement: 'Agree & Continue' },
+            { pattern: /^(?:One-click|1-click|One click|One touch)\s+/gui, replacement: '' },
+            { pattern: /^(?:Free|Complimentary)\s+(Claim|Trial|Download|Register|Access)$/gui, replacement: '$1' },
+            { pattern: /^(?:Smart|AI|Auto)\s+(Copy|Trade|Invest|Compound|Rebalance)$/gui, replacement: '$1' },
+            { pattern: /^(?:Please\s+)?(?:enter|input|type|provide)\s+(?:your\s+)?([A-Za-z0-9\s]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:Please\s+)?(?:select|choose|pick)\s+(?:your\s+)?([A-Za-z0-9\s]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:The|An?)\s+([A-Za-z]+)$/gui, replacement: '$1' },
+            { pattern: /^My\s+([A-Za-z]+)$/gui, replacement: '$1' },
+            { pattern: /^Device\s+Management$/gui, replacement: 'Devices' },
+            { pattern: /^([A-Za-z]+)\s+Center$/gui, replacement: '$1' },
+            { pattern: /^([A-Za-z]+)\s+Management$/gui, replacement: '$1' },
+            { pattern: /^(?:Follow\s+Orders?|Follow\s+Trading|Follow\s+Traders?|Copy\s+(?:Trade|Trading|Trades?|Strategy|Strategies|Portfolio|Orders?|Traders?))$/gui, replacement: 'Copy' },
+            { pattern: /^(Buy|Sell|Trade|Swap|Stake|Claim|Transfer|Send|Receive|Borrow|Repay|Deposit|Withdraw)\s+(?:Crypto|Tokens?|Coins?|Assets?|Funds?|Cash|Money|Rewards?|Prizes?|Points?|Earnings?|Airdrops?)$/gui, replacement: '$1' },
+            { pattern: /^(Buy|Order|Pay|Apply|Join|Register|Subscribe|Claim|Stake|Deposit|Withdraw|Start|Open|Shop)\s+Now$/gui, replacement: '$1' },
+            { pattern: /^(?:Place|Make)\s+(Orders?)$/gui, replacement: '$1' },
+            { pattern: /^(?:Make|Execute|Process)\s+Payments?$/gui, replacement: 'Pay' },
+            { pattern: /^(?:Make|Execute)\s+Deposits?$/gui, replacement: 'Deposit' },
+            { pattern: /^(?:Make|Execute)\s+Withdrawals?$/gui, replacement: 'Withdraw' },
+            { pattern: /^(?:Make|Execute)\s+Transfers?$/gui, replacement: 'Transfer' },
+            { pattern: /^Place\s+(?:a\s+)?(Bids?|Bets?)$/gui, replacement: '$1' },
+            { pattern: /^(Close|Open|Add|Reduce)\s+Positions?$/gui, replacement: '$1' },
+            { pattern: /^(?:Connect|Link)\s+(?:Crypto\s+)?Wallets?$/gui, replacement: 'Connect' },
+            { pattern: /^(?:Connect|Link)\s+Accounts?$/gui, replacement: 'Connect' },
+            { pattern: /^(?:View|See|Check|Show|Browse)\s+([A-Za-z]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:Quick|Fast|Instant|Auto|Direct)\s+([A-Za-z]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:Proceed\s+to|Go\s+to)\s+Checkout$/gui, replacement: 'Checkout' },
+            { pattern: /^(?:Go\s+to|Navigate\s+to)\s+([A-Za-z]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:Learn|Read)\s+More$/gui, replacement: 'More' },
+            { pattern: /^(?:Get|Start)\s+Started$/gui, replacement: 'Start' },
+            { pattern: /^(?:Sign|Log)\s+In$/gui, replacement: 'Login' },
+            { pattern: /^(?:Sign|Log)\s+Out$/gui, replacement: 'Logout' },
+            { pattern: /^Sign\s+Up$/gui, replacement: 'Register' },
+            { pattern: /^(?:Log|Sign)\s+in(?:to)?(?:\s+(?:the|your)?\s*system|\s+account)?$/gui, replacement: 'Login' },
+            { pattern: /^(?:Log|Sign)\s+out(?:of)?(?:\s+(?:the|your)?\s*account|\s+system)?$/gui, replacement: 'Logout' },
+            { pattern: /^(?:Create|Open)\s+(?:a\s+)?(?:new\s+)?account$/gui, replacement: 'Register' },
+            { pattern: /^(Edit|Delete|Confirm|Cancel|Remove|Save|Update|Select)\s+(?:an?\s+)?(?:item|operation|action|entry|data|record)$/gui, replacement: '$1' },
+            { pattern: /^Clear\s+all$/gui, replacement: 'Clear' },
+            { pattern: /^Reset\s+(?:all|form|inputs?|filters?)$/gui, replacement: 'Reset' },
+            { pattern: /^Refresh\s+(?:page|data|feed|list)$/gui, replacement: 'Refresh' },
+            { pattern: /^(Copy|Trad|Stak|Swapp|Deposit|Withdraw|Invest|Connect|Transferr|Claim)ing$/gui, replacement: (m, p1) => {
+              if (p1 === 'Trad') return 'Trade';
+              if (p1 === 'Stak') return 'Stake';
+              if (p1 === 'Swapp') return 'Swap';
+              if (p1 === 'Transferr') return 'Transfer';
+              return p1;
+            }}
+          ],
+          de: [
+            { pattern: /^(?:Bitte\s+(?:geben\s+Sie\s+)?(?:Ihre|Ihren|Ihr)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Bitte\s+)/gui, replacement: '' },
+            { pattern: /^(?:Sie\s+können\s+(?:jetzt\s+)?)/gui, replacement: '' },
+            { pattern: /^(?:Geben\s+Sie\s+(?:Ihre|Ihren|Ihr)?\s*)/gui, replacement: '' },
+            { pattern: /\s+ein$/gui, replacement: '' },
+            { pattern: /^(?:Klicken\s+Sie\s+(?:hier,\s*)?um\s+(?:zu\s+)?)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Datenschutzerkl(?:ä|ae)rung(?!\p{L})/gui, replacement: 'Datenschutz' },
+            { pattern: /(?<!\p{L})Nutzungsbedingungen(?!\p{L})/gui, replacement: 'AGB' },
+            { pattern: /(?<!\p{L})Gesch(?:ä|ae)ftsbedingungen(?!\p{L})/gui, replacement: 'Bedingungen' },
+            { pattern: /(?<!\p{L})Benutzerkontoeinstellungen(?!\p{L})/gui, replacement: 'Kontoeinstellungen' },
+            { pattern: /(?<!\p{L})Benutzerkonto(?!\p{L})/gui, replacement: 'Konto' },
+            { pattern: /(?<!\p{L})Passwort zur(?:ü|ue)cksetzen(?!\p{L})/gui, replacement: 'Passwort-Reset' },
+            { pattern: /(?<!\p{L})Vorgang abbrechen(?!\p{L})/gui, replacement: 'Abbrechen' },
+            { pattern: /(?<!\p{L})Registrieren Sie sich(?!\p{L})/gui, replacement: 'Registrieren' },
+            { pattern: /(?<!\p{L})Zahlungsinformationen(?!\p{L})/gui, replacement: 'Zahlungsdaten' },
+            { pattern: /(?<!\p{L})Zahlungsmethode hinzuf(?:ü|ue)gen(?!\p{L})/gui, replacement: 'Zahlung hinzufügen' },
+            { pattern: /(?<!\p{L})Sicherheitsabfrage(?!\p{L})/gui, replacement: 'Sicherheit' },
+            { pattern: /(?<!\p{L})Benachrichtigungseinstellungen(?!\p{L})/gui, replacement: 'Mitteilungen' },
+            { pattern: /^(?:1-Klick-|Ein-Klick-)\s*/gui, replacement: '' },
+            { pattern: /^Meine?\s+([A-Za-zÄäÖöÜüß]+)$/gui, replacement: '$1' },
+            { pattern: /^([A-Za-zÄäÖöÜüß]+)zentrum$/gui, replacement: '$1' },
+            { pattern: /^(?:Copy-Trading|Trades?\s+kopieren|Auftrag\s+kopieren|Jetzt\s+kopieren)$/gui, replacement: 'Kopieren' },
+            { pattern: /^([A-Za-zÄäÖöÜüß]+)\s+(?:anzeigen|öffnen|prüfen|sehen)$/gui, replacement: '$1' },
+            { pattern: /^(?:Jetzt\s+)?(?:anzeigen|öffnen|prüfen|sehen)\s+([A-Za-zÄäÖöÜüß]+)$/gui, replacement: '$1' },
+            { pattern: /^Jetzt\s+([A-Za-zÄäÖöÜüß]+)$/gui, replacement: '$1' },
+            { pattern: /^(?:Krypto|Token|Coins|Guthaben)\s+(kaufen|verkaufen|tauschen|senden)$/gui, replacement: '$1' },
+            { pattern: /^(?:Bestellung\s+aufgeben|Auftrag\s+erteilen)$/gui, replacement: 'Bestellen' },
+            { pattern: /^(?:Zahlung\s+(?:leisten|durchführen)|Jetzt\s+bezahlen)$/gui, replacement: 'Bezahlen' },
+            { pattern: /^Position\s+schließen$/gui, replacement: 'Schließen' },
+            { pattern: /^(?:Wallet|Konto)\s+verbinden$/gui, replacement: 'Verbinden' },
+            { pattern: /^Mehr\s+erfahren$/gui, replacement: 'Mehr' }
+          ],
+          fr: [
+            { pattern: /^(?:Veuillez\s+(?:saisir|entrer|indiquer)?\s*(?:votre)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:S'il\s+vous\s+pla[iî]t,?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Vous\s+pouvez\s+(?:maintenant\s+)?)/gui, replacement: '' },
+            { pattern: /^(?:Cliquez\s+(?:ici\s+)?pour\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Politique de confidentialit[eé](?!\p{L})/gui, replacement: 'Confidentialité' },
+            { pattern: /(?<!\p{L})Conditions d'utilisation(?!\p{L})/gui, replacement: 'Conditions' },
+            { pattern: /(?<!\p{L})Conditions g[eé]n[eé]rales(?!\p{L})/gui, replacement: 'CGU' },
+            { pattern: /(?<!\p{L})Cr[eé]er un compte(?!\p{L})/gui, replacement: "S'inscrire" },
+            { pattern: /(?<!\p{L})Se d[eé]connecter(?!\p{L})/gui, replacement: 'Déconnexion' },
+            { pattern: /(?<!\p{L})Se connecter(?!\p{L})/gui, replacement: 'Connexion' },
+            { pattern: /(?<!\p{L})Mot de passe oubli[eé]\s*\??/gui, replacement: 'Mot de passe ?' },
+            { pattern: /(?<!\p{L})En savoir plus(?!\p{L})/gui, replacement: 'Détails' },
+            { pattern: /^(?:En\s+un\s+clic|1-clic)\s+/gui, replacement: '' },
+            { pattern: /^(?:Mon|Ma|Mes)\s+([A-Za-zÀ-ÿ]+)$/gui, replacement: '$1' },
+            { pattern: /^Centre\s+d['’]?(?:aide|assistance)$/gui, replacement: 'Aide' },
+            { pattern: /^Centre\s+de\s+sécurité$/gui, replacement: 'Sécurité' },
+            { pattern: /^(?:Copier\s+(?:les\s+)?(?:trades?|transactions?|stratégies?|ordres?)|Trading\s+de\s+copie)$/gui, replacement: 'Copier' },
+            { pattern: /^(?:Voir|Consulter|Afficher)\s+(?:le|la|les|l'|votre|vos)?\s*([A-Za-zÀ-ÿ]+)$/gui, replacement: '$1' },
+            { pattern: /^(Acheter|Vendre|Échanger|Transférer|Déposer|Retirer)\s+(?:des\s+)?(?:cryptos?|jetons?|fonds|actifs|pièces)$/gui, replacement: '$1' },
+            { pattern: /^(Acheter|Commander|Payer|S'inscrire|Rejoindre)\s+maintenant$/gui, replacement: '$1' },
+            { pattern: /^(?:Passer|Placer)\s+(?:une?\s+)?(?:commande|ordre)$/gui, replacement: 'Commander' },
+            { pattern: /^(?:Effectuer|Faire)\s+(?:un\s+)?paiement$/gui, replacement: 'Payer' },
+            { pattern: /^Fermer\s+(?:la\s+)?position$/gui, replacement: 'Fermer' },
+            { pattern: /^(?:Connecter|Lier)\s+(?:le\s+)?portefeuille$/gui, replacement: 'Connecter' },
+            { pattern: /^(?:Échange|Achat)\s+rapide$/gui, replacement: '$1' }
+          ],
+          es: [
+            { pattern: /^(?:Por\s+favor,?\s*(?:ingrese|introduzca)?\s*(?:su)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Puede\s+(?:ahora\s+)?)/gui, replacement: '' },
+            { pattern: /^(?:Haga\s+clic\s+aqu[ií]\s+para\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Pol[ií]tica de privacidad(?!\p{L})/gui, replacement: 'Privacidad' },
+            { pattern: /(?<!\p{L})T[eé]rminos y condiciones(?!\p{L})/gui, replacement: 'Términos' },
+            { pattern: /(?<!\p{L})T[eé]rminos de servicio(?!\p{L})/gui, replacement: 'Términos' },
+            { pattern: /(?<!\p{L})Iniciar sesi[oó]n(?!\p{L})/gui, replacement: 'Entrar' },
+            { pattern: /(?<!\p{L})Cerrar sesi[oó]n(?!\p{L})/gui, replacement: 'Salir' },
+            { pattern: /(?<!\p{L})Crear una cuenta(?!\p{L})/gui, replacement: 'Registrarse' },
+            { pattern: /(?<!\p{L})Olvid[eé] mi contrase[nñ]a\s*\??/gui, replacement: '¿Olvidó clave?' },
+            { pattern: /^(?:En\s+un\s+clic|1\s+clic)\s+/gui, replacement: '' },
+            { pattern: /^(?:Mi|Mis)\s+([A-Za-zÁ-úñÑ]+)$/gui, replacement: '$1' },
+            { pattern: /^Centro\s+de\s+ayuda$/gui, replacement: 'Ayuda' },
+            { pattern: /^Centro\s+de\s+seguridad$/gui, replacement: 'Seguridad' },
+            { pattern: /^(?:Copiar\s+(?:operaciones?|trades?|órdenes?|estrategias?)|Copy\s+trading)$/gui, replacement: 'Copiar' },
+            { pattern: /^(?:Ver|Consultar|Mostrar)\s+(?:el|la|los|las|su|sus)?\s*([A-Za-zÁ-úñÑ]+)$/gui, replacement: '$1' },
+            { pattern: /^(Comprar|Vender|Canjear|Transferir|Depositar|Retirar)\s+(?:criptos?|tokens?|fondos|monedas|activos)$/gui, replacement: '$1' },
+            { pattern: /^(Comprar|Ordenar|Pagar|Registrarse|Unirse)\s+ahora$/gui, replacement: '$1' },
+            { pattern: /^(?:Realizar|Hacer)\s+(?:un\s+)?(?:pedido|orden)$/gui, replacement: 'Ordenar' },
+            { pattern: /^(?:Realizar|Hacer)\s+(?:el\s+)?pago$/gui, replacement: 'Pagar' },
+            { pattern: /^Cerrar\s+(?:la\s+)?posición$/gui, replacement: 'Cerrar' },
+            { pattern: /^(?:Conectar|Vincular)\s+(?:billetera|wallet)$/gui, replacement: 'Conectar' },
+            { pattern: /^Más\s+información$/gui, replacement: 'Más' }
+          ],
+          ru: [
+            { pattern: /^(?:Пожалуйста,?\s*(?:введите)?\s*(?:ваш|вашу|ваше)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Вы\s+можете\s+)/gui, replacement: '' },
+            { pattern: /^(?:Нажмите\s+(?:здесь,?\s*)?чтобы\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Политика конфиденциальности(?!\p{L})/gui, replacement: 'Конфиденциальность' },
+            { pattern: /(?<!\p{L})Условия использования(?!\p{L})/gui, replacement: 'Условия' },
+            { pattern: /(?<!\p{L})Пользовательское соглашение(?!\p{L})/gui, replacement: 'Соглашение' },
+            { pattern: /(?<!\p{L})Зарегистрироваться(?!\p{L})/gui, replacement: 'Регистрация' },
+            { pattern: /(?<!\p{L})Войти в систему(?!\p{L})/gui, replacement: 'Войти' },
+            { pattern: /(?<!\p{L})Выйти из системы(?!\p{L})/gui, replacement: 'Выйти' },
+            { pattern: /(?<!\p{L})Забыли пароль\s*\??/gui, replacement: 'Забыли пароль?' },
+            { pattern: /^(?:В\s+один\s+клик|Один\s+клик)\s+/gui, replacement: '' },
+            { pattern: /^(?:Мой|Моя|Моё|Мои)\s+([А-Яа-яЁё]+)$/gui, replacement: '$1' },
+            { pattern: /^Центр\s+помощи$/gui, replacement: 'Помощь' },
+            { pattern: /^Центр\s+безопасности$/gui, replacement: 'Безопасность' },
+            { pattern: /^(?:Копировать\s+(?:сделки|трейды|ордера)|Копитрейдинг|Копи-трейдинг)$/gui, replacement: 'Копировать' },
+            { pattern: /^(?:Посмотреть|Просмотреть)\s+([А-Яа-яЁё]+)$/gui, replacement: '$1' },
+            { pattern: /^(Купить|Продать|Обменять|Перевести|Внести|Вывести)\s+(?:криптовалюту|крипту|токены|монеты|средства|активы)$/gui, replacement: '$1' },
+            { pattern: /^(Купить|Заказать|Оплатить|Подписаться)\s+сейчас$/gui, replacement: '$1' },
+            { pattern: /^(?:Разместить|Сделать)\s+(?:заказ|ордер)$/gui, replacement: 'Заказать' },
+            { pattern: /^(?:Совершить|Произвести)\s+оплату$/gui, replacement: 'Оплатить' },
+            { pattern: /^Закрыть\s+позицию$/gui, replacement: 'Закрыть' },
+            { pattern: /^(?:Подключить|Привязать)\s+кошелек$/gui, replacement: 'Подключить' },
+            { pattern: /^Узнать\s+больше$/gui, replacement: 'Подробнее' }
+          ],
+          ja: [
+            { pattern: /^(?:クリックして|ここをクリックして)\s*/g, replacement: '' },
+            { pattern: /(?:を|の)?(?:入力|選択|設定)してください$/g, replacement: '入力' },
+            { pattern: /(?:をご覧ください|をご確認ください)$/g, replacement: '確認' },
+            { pattern: /^ワンクリック\s*/g, replacement: '' },
+            { pattern: /^マイ\s*([^\s]+)$/g, replacement: '$1' },
+            { pattern: /^ヘルプセンター$/g, replacement: 'ヘルプ' },
+            { pattern: /^セキュリティセンター$/g, replacement: 'セキュリティ' },
+            { pattern: /^(?:詳細を見る|詳細確認)$/g, replacement: '詳細' },
+            { pattern: /^(?:履歴を見る|履歴確認)$/g, replacement: '履歴' },
+            { pattern: /^(?:残高を確認|残高確認)$/g, replacement: '残高' },
+            { pattern: /^(?:今すぐ購入|今すぐ買う)$/g, replacement: '購入' },
+            { pattern: /^(?:今すぐ注文|注文する|注文を行う)$/g, replacement: '注文' },
+            { pattern: /^(?:今すぐ支払う|支払いを行う|支払いを実行)$/g, replacement: '支払' },
+            { pattern: /^(?:コピートレード|コピー取引)$/g, replacement: 'コピー' },
+            { pattern: /^(?:ポジションを閉じる|ポジション決済)$/g, replacement: '決済' },
+            { pattern: /^(?:ウォレットを接続|ウォレット接続)$/g, replacement: '接続' },
+            { pattern: /^もっと見る$/g, replacement: '詳細' }
+          ],
+          ko: [
+            { pattern: /^(?:부디|제발|클릭하여|여기를\s*클릭하여|클릭해\s*주세요)\s*/g, replacement: '' },
+            { pattern: /(?:해주세요|하십시오|하세요|바랍니다|하기)$/g, replacement: '' },
+            { pattern: /^(?:원클릭|1클릭)\s*/g, replacement: '' },
+            { pattern: /^(?:마이|내)\s*([^\s]+)$/g, replacement: '$1' },
+            { pattern: /^도움말\s*센터$/g, replacement: '도움말' },
+            { pattern: /^고객센터$/g, replacement: '고객센터' },
+            { pattern: /^보안\s*센터$/g, replacement: '보안' },
+            { pattern: /^(?:카피\s*트레이딩|카피\s*매매|거래\s*복사)$/g, replacement: '카피' },
+            { pattern: /^(?:자세히\s*보기|상세\s*보기|상세\s*정보)$/g, replacement: '상세' },
+            { pattern: /^(?:더\s*보기|더보기)$/g, replacement: '더보기' },
+            { pattern: /^(?:지금\s*구매|즉시\s*구매)$/g, replacement: '구매' },
+            { pattern: /^(?:지금\s*주문|주문하기)$/g, replacement: '주문' },
+            { pattern: /^(?:지금\s*결제|결제하기)$/g, replacement: '결제' },
+            { pattern: /^(?:포지션\s*종료|포지션\s*청산)$/g, replacement: '청산' },
+            { pattern: /^(?:지갑\s*연결|지갑\s*연동)$/g, replacement: '연결' },
+            { pattern: /^(?:로그인하기|계정\s*로그인)$/g, replacement: '로그인' },
+            { pattern: /^(?:로그아웃하기)$/g, replacement: '로그아웃' },
+            { pattern: /^(?:회원가입|계정\s*생성)$/g, replacement: '가입' }
+          ],
+          pt: [
+            { pattern: /^(?:Por\s+favor,?\s*(?:insira|digite|selecione)?\s*(?:o\s+seu|a\s+sua|seu|sua)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Voc[eê]\s+pode\s+(?:agora\s+)?)/gui, replacement: '' },
+            { pattern: /^(?:Clique\s+(?:aqui\s+)?para\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Pol[ií]tica de privacidade(?!\p{L})/gui, replacement: 'Privacidade' },
+            { pattern: /(?<!\p{L})Termos e condi[cç][oõ]es(?!\p{L})/gui, replacement: 'Termos' },
+            { pattern: /(?<!\p{L})Termos de servi[cç]o(?!\p{L})/gui, replacement: 'Termos' },
+            { pattern: /(?<!\p{L})Iniciar sess[aã]o(?!\p{L})/gui, replacement: 'Entrar' },
+            { pattern: /(?<!\p{L})Encerrar sess[aã]o(?!\p{L})/gui, replacement: 'Sair' },
+            { pattern: /(?<!\p{L})Criar uma conta(?!\p{L})/gui, replacement: 'Registrar' },
+            { pattern: /(?<!\p{L})Esqueci minha senha\s*\??/gui, replacement: 'Esqueceu a senha?' },
+            { pattern: /^(?:Em\s+um\s+clique|1\s+clique)\s+/gui, replacement: '' },
+            { pattern: /^(?:Meu|Meus|Minha|Minhas)\s+([A-Za-zÀ-ÿ]+)$/gui, replacement: '$1' },
+            { pattern: /^Centro\s+de\s+ajuda$/gui, replacement: 'Ajuda' },
+            { pattern: /^Centro\s+de\s+seguran[cç]a$/gui, replacement: 'Segurança' },
+            { pattern: /^(?:Copiar\s+(?:opera[cç][oõ]es|trades?|estrat[eé]gias)|Copy\s+trading)$/gui, replacement: 'Copiar' },
+            { pattern: /^(?:Ver|Consultar)\s+(?:os\s+|as\s+|o\s+|a\s+)?(?:detalhes|detalhe)$/gui, replacement: 'Detalhes' },
+            { pattern: /^(?:Ver|Mostrar)\s+(?:mais|tudo)$/gui, replacement: 'Mais' },
+            { pattern: /^(Comprar|Vender|Trocar|Transferir|Depositar|Retirar)\s+(?:criptos?|tokens?|moedas|fundos|ativos)$/gui, replacement: '$1' },
+            { pattern: /^(Comprar|Pedir|Pagar|Registrar)\s+agora$/gui, replacement: '$1' },
+            { pattern: /^(?:Fazer|Realizar)\s+(?:um\s+)?pedido$/gui, replacement: 'Pedir' },
+            { pattern: /^(?:Fazer|Realizar)\s+(?:o\s+)?pagamento$/gui, replacement: 'Pagar' },
+            { pattern: /^Fechar\s+(?:a\s+)?posi[cç][aã]o$/gui, replacement: 'Fechar' },
+            { pattern: /^(?:Conectar|Vincular)\s+(?:a\s+)?carteira$/gui, replacement: 'Conectar' },
+            { pattern: /^Mais\s+informa[cç][oõ]es$/gui, replacement: 'Mais' }
+          ],
+          it: [
+            { pattern: /^(?:Per\s+favore,?\s*(?:inserisci|inserire)?\s*(?:il\s+tuo|la\s+tua|il|la)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Puoi\s+(?:ora\s+)?)/gui, replacement: '' },
+            { pattern: /^(?:Clicca\s+(?:qui\s+)?per\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Informativa sulla privacy(?!\p{L})/gui, replacement: 'Privacy' },
+            { pattern: /(?<!\p{L})Termini e condizioni(?!\p{L})/gui, replacement: 'Termini' },
+            { pattern: /(?<!\p{L})Termini di servizio(?!\p{L})/gui, replacement: 'Termini' },
+            { pattern: /(?<!\p{L})Accedi al tuo account(?!\p{L})/gui, replacement: 'Accedi' },
+            { pattern: /(?<!\p{L})Crea un account(?!\p{L})/gui, replacement: 'Registrati' },
+            { pattern: /(?<!\p{L})Password dimenticata\s*\??/gui, replacement: 'Password persa?' },
+            { pattern: /^(?:In\s+un\s+clic|1\s+clic)\s+/gui, replacement: '' },
+            { pattern: /^(?:Il\s+mio|La\s+mia|I\s+miei|Le\s+mie|Mio|Mia)\s+([A-Za-zÀ-ÿ]+)$/gui, replacement: '$1' },
+            { pattern: /^Centro\s+assistenza$/gui, replacement: 'Assistenza' },
+            { pattern: /^Centro\s+sicurezza$/gui, replacement: 'Sicurezza' },
+            { pattern: /^(?:Copia\s+(?:operazioni|trades?|strategie)|Copy\s+trading)$/gui, replacement: 'Copia' },
+            { pattern: /^(?:Vedi|Mostra|Visualizza)\s+(?:i\s+|gli\s+|le\s+|il\s+|la\s+)?dettagli$/gui, replacement: 'Dettagli' },
+            { pattern: /^(?:Vedi|Mostra)\s+altro$/gui, replacement: 'Altro' },
+            { pattern: /^(Compra|Vendi|Scambia|Trasferisci|Deposita|Preleva)\s+(?:cripto|token|fondi|monete|asset)$/gui, replacement: '$1' },
+            { pattern: /^(Compra|Ordina|Paga|Iscriviti)\s+ora$/gui, replacement: '$1' },
+            { pattern: /^(?:Effettua|Fai)\s+(?:un\s+)?ordine$/gui, replacement: 'Ordina' },
+            { pattern: /^(?:Effettua|Fai)\s+(?:il\s+)?pagamento$/gui, replacement: 'Paga' },
+            { pattern: /^Chiudi\s+(?:la\s+)?posizione$/gui, replacement: 'Chiudi' },
+            { pattern: /^(?:Connetti|Collega)\s+(?:il\s+)?wallet$/gui, replacement: 'Connetti' },
+            { pattern: /^Ulteriori\s+informazioni$/gui, replacement: 'Dettagli' }
+          ],
+          nl: [
+            { pattern: /^(?:Gelieve\s+(?:in\s+te\s+voeren|te\s+selecteren)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Alsjeblieft,?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Klik\s+(?:hier\s+)?om\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Privacybeleid(?!\p{L})/gui, replacement: 'Privacy' },
+            { pattern: /(?<!\p{L})Algemene voorwaarden(?!\p{L})/gui, replacement: 'Voorwaarden' },
+            { pattern: /(?<!\p{L})Wachtwoord vergeten\s*\??/gui, replacement: 'Wachtwoord vergeten?' },
+            { pattern: /^(?:1-klik|In\s+één\s+klik)\s+/gui, replacement: '' },
+            { pattern: /^(?:Mijn)\s+([A-Za-zÀ-ÿ]+)$/gui, replacement: '$1' },
+            { pattern: /^Helpcentrum$/gui, replacement: 'Hulp' },
+            { pattern: /^Veiligheidscentrum$/gui, replacement: 'Veiligheid' },
+            { pattern: /^(?:Copy-trading|Transacties\s+kopiëren)$/gui, replacement: 'Kopiëren' },
+            { pattern: /^(?:Bekijk|Toon)\s+details$/gui, replacement: 'Details' },
+            { pattern: /^(?:Bekijk|Toon)\s+meer$/gui, replacement: 'Meer' },
+            { pattern: /^(?:Koop|Bestel|Betaal)\s+nu$/gui, replacement: '$1' },
+            { pattern: /^Positie\s+sluiten$/gui, replacement: 'Sluiten' },
+            { pattern: /^Wallet\s+verbinden$/gui, replacement: 'Verbinden' }
+          ],
+          pl: [
+            { pattern: /^(?:Proszę,?\s*(?:wprowadzić|wpisać|wybrać)?\s*(?:swój|swoje)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Kliknij\s+(?:tutaj,?\s*)?aby\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Polityka prywatności(?!\p{L})/gui, replacement: 'Prywatność' },
+            { pattern: /(?<!\p{L})Regulamin i warunki(?!\p{L})/gui, replacement: 'Regulamin' },
+            { pattern: /(?<!\p{L})Warunki korzystania(?!\p{L})/gui, replacement: 'Warunki' },
+            { pattern: /(?<!\p{L})Nie pamiętasz hasła\s*\??/gui, replacement: 'Zapomniałeś hasła?' },
+            { pattern: /^(?:Jednym kliknięciem|1-klik)\s+/gui, replacement: '' },
+            { pattern: /^(?:Mój|Moja|Moje)\s+([A-Za-zĄ-ż]+)$/gui, replacement: '$1' },
+            { pattern: /^Centrum\s+pomocy$/gui, replacement: 'Pomoc' },
+            { pattern: /^Centrum\s+bezpieczeństwa$/gui, replacement: 'Bezpieczeństwo' },
+            { pattern: /^(?:Kopiuj\s+transakcje|Copy\s+trading)$/gui, replacement: 'Kopiuj' },
+            { pattern: /^(?:Zobacz|Pokaż)\s+szczegóły$/gui, replacement: 'Szczegóły' },
+            { pattern: /^(?:Zobacz|Pokaż)\s+więcej$/gui, replacement: 'Więcej' },
+            { pattern: /^(Kup|Zamów|Zapłać)\s+teraz$/gui, replacement: '$1' },
+            { pattern: /^Zamknij\s+pozycję$/gui, replacement: 'Zamknij' },
+            { pattern: /^(?:Połącz|Podłącz)\s+portfel$/gui, replacement: 'Połącz' }
+          ],
+          tr: [
+            { pattern: /^(?:Lütfen\s+(?:giriniz|seçiniz)?\s*)/gui, replacement: '' },
+            { pattern: /^(?:Buraya\s+tıklayın\s+)/gui, replacement: '' },
+            { pattern: /(?<!\p{L})Gizlilik Politikas[ıi](?!\p{L})/gui, replacement: 'Gizlilik' },
+            { pattern: /(?<!\p{L})Kullan[ıi]m Ko[sş]ullar[ıi](?!\p{L})/gui, replacement: 'Koşullar' },
+            { pattern: /(?<!\p{L})Oturum A[cç](?!\p{L})/gui, replacement: 'Giriş' },
+            { pattern: /(?<!\p{L})Oturumu Kapat(?!\p{L})/gui, replacement: 'Çıkış' },
+            { pattern: /(?<!\p{L})Hesap Olu[sş]tur(?!\p{L})/gui, replacement: 'Kayıt' },
+            { pattern: /(?<!\p{L})[SŞ]ifremi Unuttum\s*\??/gui, replacement: 'Şifremi unuttum?' },
+            { pattern: /^(?:Tek\s+t[ıi]kla|1\s+t[ıi]kla)\s+/gui, replacement: '' },
+            { pattern: /^(?:Benim|Hesab[ıi]m)\s+([A-Za-zÇçĞğİıÖöŞşÜü]+)$/gui, replacement: '$1' },
+            { pattern: /^Yard[ıi]m\s+Merkezi$/gui, replacement: 'Yardım' },
+            { pattern: /^G[uü]venlik\s+Merkezi$/gui, replacement: 'Güvenlik' },
+            { pattern: /^(?:Kopya\s+ticaret(?:i)?|İ[sş]lemleri\s+kopyala)$/gui, replacement: 'Kopyala' },
+            { pattern: /^(?:Detaylar[ıi]\s+g[oö]r|Ayr[ıi]nt[ıi]lar[ıi]\s+g[oö]r)$/gui, replacement: 'Detaylar' },
+            { pattern: /^(?:Daha\s+fazla\s+g[oö]r)$/gui, replacement: 'Daha fazla' },
+            { pattern: /^(Sat[ıi]n\s+al|Sipari[sş]\s+ver|[OÖ]de)\s+[sş]imdi$/gui, replacement: '$1' },
+            { pattern: /^Pozisyonu\s+kapat$/gui, replacement: 'Kapat' },
+            { pattern: /^C[uü]zdan[ıi]\s+ba[gğ]la$/gui, replacement: 'Bağla' }
+          ]
+        },
+
+        simplify(origText, translatedText, targetLang) {
+          if (!translatedText) return translatedText;
+          let result = translatedText.trim();
+          const langCode = (targetLang || '').toLowerCase();
+          const langKey = langCode.slice(0, 2);
+
+          // 1. Safety whitelist check: Protect critical financial and metric terms
+          if (this.protectedMetrics && this.protectedMetrics.has(result.toLowerCase())) {
+            return result;
+          }
+
+          // 2. Direct 48-language resolution check (Chinese or English source)
+          if (origText && typeof origText === 'string') {
+            const direct = this.resolveDirect(origText, targetLang);
+            if (direct) {
+              return direct;
+            }
+          }
+
+          // 3. Initial universal cleanup: Outer brackets & trailing punctuation for short UI texts (<= 40 chars)
+          if (result.length <= 40) {
+            result = result.replace(/^[(（\[【](.*?)[)）\]】]$/, '$1').trim();
+            result = result.replace(/[.。!！?？;；,:，：…]+$/, '').trim();
+          }
+
+          // 4. Apply language-specific fluff & compaction patterns
+          const rules = this.fluffPatterns[langKey];
+          if (rules && rules.length > 0) {
+            for (const rule of rules) {
+              if (rule.pattern.test(result)) {
+                rule.pattern.lastIndex = 0;
+                result = result.replace(rule.pattern, rule.replacement).trim();
+              }
+            }
+          }
+
+          // 5. Apply universal multi-lingual fluff patterns (Nordic, Slavic, Eastern Europe, Middle East, etc.)
+          if (this.universalFluffPatterns && this.universalFluffPatterns.length > 0) {
+            for (const rule of this.universalFluffPatterns) {
+              if (rule.pattern.test(result)) {
+                rule.pattern.lastIndex = 0;
+                result = result.replace(rule.pattern, rule.replacement).trim();
+              }
+            }
+          }
+
+          // 6. Capitalize first character for alphabetic languages (non-CJK & non-Arabic)
+          if (result && !['zh', 'ja', 'ko', 'ar', 'fa', 'ur', 'he', 'th', 'km', 'my'].includes(langKey)) {
+            result = result.charAt(0).toUpperCase() + result.slice(1);
+          }
+
+          // 7. Final trailing punctuation & bracket strip for short UI texts
+          if (result.length <= 40) {
+            result = result.replace(/^[(（\[【](.*?)[)）\]】]$/, '$1').trim();
+            result = result.replace(/[.。!！?？;；,:，：…]+$/, '').trim();
+          }
+
+          // 8. Collapse multiple spaces
+          result = result.replace(/\s{2,}/g, ' ');
+
+          return result;
+        },
+
+        // Backward-compatible alias
+        calibrate(origText, translatedText, targetLang) {
+          return this.simplify(origText, translatedText, targetLang);
+        }
+      };
+    })();
+
+    const UIWidthProtectionEngine = TextSimplificationEngine;
+
     // Concrete Translation Providers with Failover & Backoff
     const TranslationProviders = {
       async fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
@@ -4590,6 +5192,40 @@ echo "=========================================="
 
       async sleep(ms) {
         return new Promise(r => setTimeout(r, ms));
+      },
+
+      getSimplificationPrompt(simplifyText) {
+        if (simplifyText === false) return '';
+        return `CRITICAL UI MICROCOPY EXTREME SIMPLIFICATION DIRECTIVE (文案极简化后处理与防爆框):
+1. Target Context: Mobile UI microcopy (Buttons, Tab bars, Nav headers, Chips, List items, Form labels).
+2. Ruthless Brevity & Punchy UI Copy: Ruthlessly eliminate all conversational fluff, polite phrases, and filler verbs. Strip prefixes like "Please", "Click to", "In order to", "Your", "Geben Sie ein", "Veuillez". Condense verbose sentences into punchy 1-3 word UI labels.
+3. No Trailing Periods: Never end buttons, navigation titles, or short UI labels with a period or full stop.
+4. Mobile Compression & Short Synonyms:
+   - German: Prefer "Datenschutz" over "Datenschutzerklärung", "AGB" over "Nutzungsbedingungen", "Konto" over "Benutzerkonto", "Passwort-Reset" over "Passwort zurücksetzen", "Abbrechen" over "Vorgang abbrechen", "Zahlungsdaten" over "Zahlungsinformationen".
+   - French: Prefer "Confidentialité" over "Politique de confidentialité", "Conditions" over "Conditions d'utilisation", "Connexion" over "Se connecter", "S'inscrire" over "Créer un compte".
+   - Spanish: Prefer "Privacidad" over "Política de privacidad", "Términos" over "Términos y condiciones", "Entrar" over "Iniciar sesión", "Registrarse" over "Crear una cuenta".
+   - Russian: Prefer "Конфиденциальность" over "Политика конфиденциальности", "Условия" over "Условия использования", "Войти" over "Войти в систему".
+   - Chinese: Prefer "隐私政策" over "个人隐私信息保护政策", "用户协议" over "用户使用服务条款与协议", "输入密码" over "请输入您的密码".
+5. CRITICAL SINGLE-WORD UI MICROCOPY HEURISTIC (单单词极简转换原则):
+   - Whenever translating 2-word UI actions, buttons, or navigation tabs where a single-word equivalent naturally fits mobile microcopy, ALWAYS prefer the single-word form.
+   - Examples:
+     * "跟单" / "跟单交易" -> "Copy" (NEVER output "Copy Trade", "Copy Trading", or "Follow Orders")
+     * "下单" / "立即下单" -> "Order" (NEVER output "Place Order")
+     * "平仓" -> "Close" (NEVER output "Close Position")
+     * "查看详情" -> "Details" (NEVER output "View Details")
+     * "立即支付" / "去支付" -> "Pay" (NEVER output "Make Payment")
+     * "充值" / "充币" -> "Deposit" (NEVER output "Make Deposit")
+     * "提现" / "提币" -> "Withdraw" (NEVER output "Make Withdrawal")
+     * "划转" -> "Transfer" (NEVER output "Transfer Funds")
+     * "质押" -> "Stake" (NEVER output "Stake Tokens")
+     * "快速兑换" / "闪兑" -> "Swap" (NEVER output "Quick Swap")
+     * "查看更多" -> "More" (NEVER output "View More" or "See More")
+   - This single-word rule applies across ALL target languages (e.g. French: "Copier", "Détails", "Payer"; German: "Kopieren", "Details", "Bezahlen"; Spanish: "Copiar", "Detalles", "Pagar"; Russian: "Копировать", "Детали", "Оплатить"; Japanese: "コピー", "詳細", "支払").`;
+      },
+
+      // Backward-compatible alias
+      getMobileWidthPrompt(compactUiWidth) {
+        return this.getSimplificationPrompt(compactUiWidth);
       },
 
       // Google Resilient Provider: GTX + Dict + Exponential Backoff with Jitter
@@ -4721,7 +5357,7 @@ Strict formatting and tag integrity rules:
         return 'auto';
       },
 
-      async translateSingle(text, targetLang) {
+      async translateSingle(text, targetLang, simplifyText = true) {
         const trimmed = (text || '').trim();
         if (!trimmed) return text;
 
@@ -4730,7 +5366,7 @@ Strict formatting and tag integrity rules:
         }
 
         // Check LRU cache
-        const cacheKey = `${targetLang}:${trimmed}`;
+        const cacheKey = `${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${trimmed}`;
         const cached = this.cache.get(cacheKey);
         if (cached) return cached;
 
@@ -4739,11 +5375,36 @@ Strict formatting and tag integrity rules:
           return text;
         }
 
+        // Direct 48-language resolution fast path (handles both Chinese and English sources)
+        if (simplifyText !== false) {
+          const direct = TextSimplificationEngine.resolveDirect(trimmed, targetLang);
+          if (direct) {
+            let res = direct;
+            if (state.smartCasing !== false) {
+              res = SmartCasingEngine.format(res, targetLang);
+            }
+            this.cache.set(cacheKey, res);
+            return res;
+          }
+        }
+
         const srcLang = this.guessSourceLang(trimmed);
         if (srcLang === targetLang && !srcLang.startsWith('zh')) return trimmed;
 
-        let result = await TranslationProviders.googleTranslate(trimmed, targetLang);
+        // Source-normalized query to avoid Google sentence bloat (Chinese & English prefix stripping)
+        let queryText = trimmed;
+        if (simplifyText !== false) {
+          const norm = TextSimplificationEngine.normalizeSource(trimmed);
+          if (norm && norm !== trimmed && norm.length < trimmed.length) {
+            queryText = norm;
+          }
+        }
+
+        let result = await TranslationProviders.googleTranslate(queryText, targetLang);
         if (result && result !== trimmed) {
+          if (simplifyText !== false) {
+            result = TextSimplificationEngine.simplify(trimmed, result, targetLang);
+          }
           if (state.smartCasing !== false) {
             result = SmartCasingEngine.format(result, targetLang);
           }
@@ -4754,7 +5415,7 @@ Strict formatting and tag integrity rules:
         return trimmed;
       },
 
-      async translateBatch(texts, targetLang, customConfig, onProgress = null) {
+      async translateBatch(texts, targetLang, customConfig, onProgress = null, simplifyText = true) {
         const uniqueTexts = Array.from(new Set(texts.map(t => (t || '').trim()).filter(Boolean)));
         const resultMap = new Map();
 
@@ -4765,7 +5426,7 @@ Strict formatting and tag integrity rules:
             resultMap.set(t, t);
             continue;
           }
-          const cacheKey = `${targetLang}:${t}`;
+          const cacheKey = `${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${t}`;
           const cached = this.cache.get(cacheKey);
           if (cached) {
             resultMap.set(t, cached);
@@ -4776,6 +5437,21 @@ Strict formatting and tag integrity rules:
             resultMap.set(t, t);
             continue;
           }
+
+          // Direct 48-language resolution fast path
+          if (simplifyText !== false) {
+            const direct = TextSimplificationEngine.resolveDirect(t, targetLang);
+            if (direct) {
+              let res = direct;
+              if (state.smartCasing !== false) {
+                res = SmartCasingEngine.format(res, targetLang);
+              }
+              resultMap.set(t, res);
+              this.cache.set(cacheKey, res);
+              continue;
+            }
+          }
+
           toTranslate.push(t);
         }
 
@@ -4802,7 +5478,7 @@ Strict formatting and tag integrity rules:
             const chunk = pending.slice(i, i + CONCURRENCY);
             await Promise.all(
               chunk.map(async (text) => {
-                const trans = await this.translateSingle(text, targetLang);
+                const trans = await this.translateSingle(text, targetLang, simplifyText);
                 resultMap.set(text, trans);
                 completedCount++;
                 if (onProgress) onProgress(completedCount, totalCount);
@@ -4815,6 +5491,7 @@ Strict formatting and tag integrity rules:
         for (const [key, val] of resultMap.entries()) {
           if (val) {
             let processed = TagShieldingEngine.repairTags(val);
+            if (simplifyText !== false) processed = TextSimplificationEngine.simplify(key, processed, targetLang);
             if (state.smartCasing !== false) {
               processed = SmartCasingEngine.format(processed, targetLang);
             }
@@ -4842,6 +5519,9 @@ Strict formatting and tag integrity rules:
           if (tr?.pinnedLanguageCodes?.length > 0) state.pinnedCodes = [...tr.pinnedLanguageCodes];
           if (tr?.targetLanguage) state.targetLanguage = tr.targetLanguage;
           if (tr?.translateMode) state.translateMode = tr.translateMode;
+          if (typeof tr?.simplifyText === 'boolean') state.simplifyText = tr.simplifyText;
+          else if (typeof tr?.compactUiWidth === 'boolean') state.simplifyText = tr.compactUiWidth;
+          state.compactUiWidth = state.simplifyText;
           if (typeof tr?.protectText === 'boolean') state.protectText = tr.protectText;
           if (typeof tr?.preserveRichText === 'boolean') state.preserveRichText = tr.preserveRichText;
           if (typeof tr?.smartCasing === 'boolean') state.smartCasing = tr.smartCasing;
@@ -4872,6 +5552,7 @@ Strict formatting and tag integrity rules:
 
       async 'translation/do-translate'(payload, requestId) {
         const { targetLanguage, nodeTexts, preserveRichText } = payload;
+        const simplifyText = (payload.simplifyText !== undefined ? payload.simplifyText : (payload.compactUiWidth !== undefined ? payload.compactUiWidth : (state.simplifyText !== false)));
         const isCustom = state.settings?.activeProviderId === 'custom-llm' || state.settings?.activeProviderId === 'deepseek';
         const customConfig = isCustom ? (state.settings?.customLlm || state.settings?.providerCredentials?.deepseek) : null;
         
@@ -4885,13 +5566,16 @@ Strict formatting and tag integrity rules:
             }
           };
 
-          const resultMap = await TranslationPipeline.translateBatch(rawTexts, targetLanguage, customConfig, onProgress);
+          const resultMap = await TranslationPipeline.translateBatch(rawTexts, targetLanguage, customConfig, onProgress, simplifyText);
           const results = nodeTexts.map(n => {
             const origTrimmed = (n.text || '').trim();
             if (state.protectText !== false && DataProtectionEngine.isProtected(origTrimmed)) {
               return { id: n.id, translated: n.text, richStyles: n.richStyles };
             }
             let trans = resultMap.get(origTrimmed) || n.text;
+            if (simplifyText !== false && trans) {
+              trans = TextSimplificationEngine.simplify(origTrimmed, trans, targetLanguage);
+            }
             if (state.smartCasing !== false && trans) {
               trans = SmartCasingEngine.format(trans, targetLanguage);
             }
@@ -4922,6 +5606,7 @@ Strict formatting and tag integrity rules:
 
       async 'translation/do-scheme-translate'(payload, requestId) {
         const { batches, preserveRichText } = payload;
+        const simplifyText = (payload.simplifyText !== undefined ? payload.simplifyText : (payload.compactUiWidth !== undefined ? payload.compactUiWidth : (state.simplifyText !== false)));
         const isCustom = state.settings?.activeProviderId === 'custom-llm' || state.settings?.activeProviderId === 'deepseek';
         const customConfig = isCustom ? (state.settings?.customLlm || state.settings?.providerCredentials?.deepseek) : null;
         
@@ -4941,13 +5626,16 @@ Strict formatting and tag integrity rules:
               }
             };
 
-            const resultMap = await TranslationPipeline.translateBatch(rawTexts, batch.targetLanguage, customConfig, onProgress);
+            const resultMap = await TranslationPipeline.translateBatch(rawTexts, batch.targetLanguage, customConfig, onProgress, simplifyText);
             const results = batch.nodeTexts.map(n => {
               const origTrimmed = (n.text || '').trim();
               if (state.protectText !== false && DataProtectionEngine.isProtected(origTrimmed)) {
                 return { id: n.id, translated: n.text, richStyles: n.richStyles };
               }
               let trans = resultMap.get(origTrimmed) || n.text;
+              if (trans) {
+                trans = TextSimplificationEngine.simplify(origTrimmed, trans, batch.targetLanguage);
+              }
               if (state.smartCasing !== false && trans) {
                 trans = SmartCasingEngine.format(trans, batch.targetLanguage);
               }
