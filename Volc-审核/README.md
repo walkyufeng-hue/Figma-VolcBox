@@ -24,19 +24,13 @@
 #### 🇨🇳 中文版：
 ```text
 【v1.1.0 更新动态】
-1. 全球 48 语种极简防爆框引擎：涵盖德/俄/西/法/意/阿等 48 种语种的 71+ UI 核心概念词库矩阵，100% 极简化为 1~2 个精炼单词，彻底根治多语言按钮与标签折行爆框痛点；
-2. 英文源设计稿逆向归一化：支持对纯英文稿件（如 1-Click Copy、Instant Buy、Proceed to Checkout 等）直接逆向精简并映射至 48 语种极简词库；
-3. 新增“算法极简”独立开关与 0ms 本地瞬时直出；
-4. 跨语系语气助词智能剥离引擎，自动过滤口语化冗余前缀修饰。
+解决多语言翻译文案冗长、无法放进按钮的痛点，新增“算法简化”开关：自动剥离冗余修饰，将所有语种的 UI 文案直接压缩为单个单词。
 ```
 
 #### 🇺🇸 English Version (for Figma Reviewers):
 ```text
 [What's New in v1.1.0]
-1. Universal 48-Language Compact Microcopy Engine: Built-in canonical UI matrix covering 48 languages, guaranteeing 1-2 word concise copy to eliminate button and label overflows;
-2. English Source Reverse Normalization: Intelligently reverse-normalizes English microcopy (e.g., "1-Click Copy", "Instant Buy", "Proceed to Checkout") directly into compact forms across all 48 languages;
-3. Dedicated "Compact Copy" Toggle with instant 0ms local response without network latency;
-4. Multi-lingual Fluff Stripping: Automatically removes polite prefixes and conversational filler words across European and Asian language families.
+Fixes the issue where localized translations are too verbose to fit inside buttons and labels. Adds an "Algorithmic Simplification" switch that automatically strips redundant modifiers and compresses UI copy across all languages into single words.
 ```
 
 ---
