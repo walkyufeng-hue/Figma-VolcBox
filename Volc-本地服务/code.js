@@ -313,7 +313,13 @@ const NativeRichTextEngine = {
     if (!node || node.type !== 'TEXT') return;
     if (!translatedTaggedText && translatedTaggedText !== '') return;
     if (!styles || styles.length === 0) {
-      const clean = (translatedTaggedText || '').replace(/<[^>]+>/g, '');
+      const clean = (translatedTaggedText || '')
+        .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+        .replace(/<\/?\d+>/g, '')
+        .replace(/(?:^|[\s,.;:!?])(?:s|span)\s+id\s*=\s*["']?\d+["']?\s*>/gi, '')
+        .replace(/<\s*\/\s*(?:s|span)\s*/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/<\s*(?:s|span)?\s*$/i, '');
       const baseFont = node.fontName === figma.mixed ? node.getRangeFontName(0, 1) : node.fontName;
       await FontManagerService.safeLoadFont(baseFont);
       if (node.fontName === figma.mixed) {
@@ -331,6 +337,12 @@ const NativeRichTextEngine = {
         .replace(/&#39;/gi, "'")
         .replace(/&amp;/gi, '&');
 
+    // Tolerantly repair broken or dropped tag brackets (<s id= or </s)
+    unescaped = unescaped.replace(/(^|[\s,.;:!?])(?<!<)(?:s|span)\s+id\s*=\s*["']?(\d+)["']?\s*>/gi, '$1<s id="$2">');
+    unescaped = unescaped.replace(/<\s*\/\s*(?:s|span)(?!>)(?=[\s,.;:!?]|$)/gi, '</s>');
+    unescaped = unescaped.replace(/<\s*(?:s|span)\s+id\s*=\s*["']?(\d+)["']?\s*>/gi, '<s id="$1">');
+    unescaped = unescaped.replace(/<\s*\/\s*(?:s|span)\s*>/gi, '</s>');
+
     // 2. Tolerant tag regex matching both <s id="0">...</s> and <span id="0">...</span> with flexible spacing
     const tagRegex = /<\s*(?:s|span)\s+id\s*=\s*["']?(\d+)["']?\s*>([\s\S]*?)<\s*\/\s*(?:s|span)\s*>/gi;
     
@@ -340,14 +352,18 @@ const NativeRichTextEngine = {
     let lastIndex = 0;
 
     while ((match = tagRegex.exec(unescaped)) !== null) {
-      const before = unescaped.substring(lastIndex, match.index);
+      const before = unescaped.substring(lastIndex, match.index)
+        .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+        .replace(/<\/?\d+>/g, '');
       if (before) {
         segmentsToApply.push({ start: finalString.length, end: finalString.length + before.length, styleIdx: 0 });
         finalString += before;
       }
 
       const styleIdx = parseInt(match[1], 10);
-      const innerText = match[2];
+      const innerText = match[2]
+        .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+        .replace(/<\/?\d+>/g, '');
       if (innerText) {
         const start = finalString.length;
         finalString += innerText;
@@ -358,7 +374,9 @@ const NativeRichTextEngine = {
       lastIndex = tagRegex.lastIndex;
     }
 
-    const after = unescaped.substring(lastIndex);
+    const after = unescaped.substring(lastIndex)
+      .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+      .replace(/<\/?\d+>/g, '');
     if (after) {
       segmentsToApply.push({ start: finalString.length, end: finalString.length + after.length, styleIdx: 0 });
       finalString += after;
@@ -366,9 +384,22 @@ const NativeRichTextEngine = {
 
     // Fallback if no tags detected
     if (segmentsToApply.length === 0) {
-      finalString = unescaped.replace(/<[^>]+>/g, '');
+      finalString = unescaped
+        .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+        .replace(/<\/?\d+>/g, '')
+        .replace(/(?:^|[\s,.;:!?])(?:s|span)\s+id\s*=\s*["']?\d+["']?\s*>/gi, '')
+        .replace(/<\s*\/\s*(?:s|span)\s*/gi, '')
+        .replace(/<[^>]+>/g, '');
       segmentsToApply.push({ start: 0, end: finalString.length, styleIdx: 0 });
     }
+
+    // Anti-leakage canvas safety guarantee: never render stray markup tags or broken bracket artifacts
+    finalString = finalString
+      .replace(/(?:^|[\s,.;:!?])(?:s|span)\s+id\s*=\s*["']?\d+["']?\s*>/gi, '')
+      .replace(/<\s*\/\s*(?:s|span)\s*/gi, '')
+      .replace(/<\s*\/?\s*(?:s|span)\b[^>]*>/gi, '')
+      .replace(/<\/?\d+>/g, '')
+      .replace(/<\s*(?:s|span)?\s*$/i, '');
 
     // 3. Preload all unique fonts required
     const fontsToLoad = [];
@@ -1638,12 +1669,15 @@ const SmartMockEngine = {
   },
 
   mockTaggedText(taggedText, node) {
-    return taggedText.replace(/<span\s+id\s*=\s*["']?(\d+)["']?\s*>([\s\S]*?)<\/\s*span\s*>/gi, (match, id, innerText) => {
+    return taggedText.replace(/<\s*(?:span|s)\s+id\s*=\s*["']?(\d+)["']?\s*>([\s\S]*?)<\/\s*(?:span|s)\s*>/gi, (match, id, innerText) => {
       const transformed = this.mockText(innerText, node);
-      return `<span id="${id}">${transformed}</span>`;
+      return `<s id="${id}">${transformed}</s>`;
     });
   }
 };
+
+let lastSchemeCreatedNodes = [];
+let lastSchemeOriginalTargets = [];
 
 const Handlers = {
   // --- 1. Selection & Core Handlers ---
@@ -2242,11 +2276,11 @@ const Handlers = {
 
     const batches = [];
     const lastPositions = new Map();
+    const allClones = [];
 
     for (const langObj of scheme.languages) {
       const langCode = langObj.code;
       const langTexts = [];
-      const newSelection = [];
       
       for (const node of targets) {
         const clone = node.clone();
@@ -2267,7 +2301,7 @@ const Handlers = {
         clone.name = `${node.name} - ${langObj.name} - ${langObj.en}`;
         
         lastPositions.set(node.id, clone);
-        newSelection.push(clone);
+        allClones.push(clone);
         
         // Gather texts
         const textNodes = [];
@@ -2287,10 +2321,16 @@ const Handlers = {
         }
       }
       
-      figma.currentPage.selection = newSelection;
       if (langTexts.length > 0) {
         batches.push({ targetLanguage: langCode, nodeTexts: langTexts });
       }
+    }
+
+    if (allClones.length > 0) {
+      lastSchemeCreatedNodes = allClones;
+      lastSchemeOriginalTargets = targets;
+      figma.currentPage.selection = allClones;
+      figma.viewport.scrollAndZoomIntoView(allClones);
     }
 
     if (batches.length === 0) {
@@ -2313,6 +2353,48 @@ const Handlers = {
         compactUiWidth: (simplifyText !== false && compactUiWidth !== false)
       }
     });
+  },
+
+  'translation/scheme-undo': async (requestId) => {
+    let removedCount = 0;
+    if (lastSchemeCreatedNodes && lastSchemeCreatedNodes.length > 0) {
+      for (const node of lastSchemeCreatedNodes) {
+        try {
+          if (node && !node.removed) {
+            node.remove();
+            removedCount++;
+          }
+        } catch (e) {
+          console.warn('[Scheme Undo] Failed to remove node:', e);
+        }
+      }
+      lastSchemeCreatedNodes = [];
+    }
+
+    if (removedCount > 0) {
+      figma.notify(`↩️ 已成功撤回，移除了 ${removedCount} 个批量生成的画板`);
+      if (lastSchemeOriginalTargets && lastSchemeOriginalTargets.length > 0) {
+        const validOriginals = lastSchemeOriginalTargets.filter(n => !n.removed);
+        if (validOriginals.length > 0) {
+          figma.currentPage.selection = validOriginals;
+          figma.viewport.scrollAndZoomIntoView(validOriginals);
+        }
+      }
+    } else {
+      const result = await NodeHistoryManager.undo('translate');
+      if (result.restored > 0) {
+        figma.notify(`↩️ 已成功撤回 ${result.restored} 个图层的翻译`);
+      } else {
+        figma.notify('当前没有可撤回的批量画板记录');
+      }
+    }
+
+    sendToUI({
+      type: 'task/completed',
+      requestId,
+      payload: { taskId: requestId, message: `已撤回` },
+    });
+    sendToUI({ type: 'selection/changed', requestId, payload: SelectionEngine.scan() });
   },
 
   'translation/undo': async (requestId) => {

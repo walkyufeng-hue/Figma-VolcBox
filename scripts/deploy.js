@@ -77,7 +77,7 @@ if (!tokenData || !tokenData.cfApiToken) {
   console.error(`❌ No Cloudflare token configured for ${target} in .tokens.json.`);
 } else {
   try {
-    const envCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${tokenData.cfAccountId} CLOUDFLARE_API_TOKEN=${tokenData.cfApiToken} npx wrangler pages deploy website --project-name=${cf.project} --branch=main`;
+    const envCmd = `https_proxy=http://127.0.0.1:7897 http_proxy=http://127.0.0.1:7897 CLOUDFLARE_ACCOUNT_ID=${tokenData.cfAccountId} CLOUDFLARE_API_TOKEN=${tokenData.cfApiToken} npx -y wrangler pages deploy website --project-name=${cf.project} --branch=main`;
     execSync(envCmd, { cwd: rootDir, stdio: 'inherit' });
     console.log(`\n🎉 Deployment Complete! Site is live at: ${cf.domain}\n`);
   } catch (e) {

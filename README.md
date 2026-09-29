@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+[![Version](https://img.shields.io/badge/version-v1.1.1-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
 [![Website](https://img.shields.io/badge/website-figma--volcbox.pages.dev-orange.svg?style=flat-square)](https://figma-volcbox.pages.dev)
 [![Figma](https://img.shields.io/badge/Figma-Plugin_API-F24E1E?style=flat-square&logo=figma&logoColor=white)](https://www.figma.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.0.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.1.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -27,15 +27,16 @@
 
 ---
 
-## 📢 最近更新 · v1.1.0 版本动态
+## 📢 最近更新 · v1.1.1 版本动态
 
-> 💡 **解决多语言翻译文案冗长、无法放进按钮的痛点，新增“算法简化”开关：自动剥离冗余修饰，将所有语种的 UI 文案直接压缩为单个单词。**
+> 💡 **解决画板批量生成后难撤回、视野丢失及并发切语言误触的痛点：新增画板批量翻译「一键撤回」、生成后全景自动聚焦、翻译状态安全锁及富文本标签泄漏防护。**
 
 | 模块 | 🎯 更新亮点 | ⚡ 实际设计收益 |
 | :--- | :--- | :--- |
-| ⚡ 算法简化单词 | **新增“算法简化”独立开关**<br>解决多语言翻译文案冗长、无法放进按钮的痛点。开启后自动剥离“一键/点击/请”等冗余修饰词，将所有语种的 UI 文案直接压缩为单个核心单词。 | 翻译结果短小精炼，高频按钮与标签 100% 紧凑排版，彻底告别长词折行与爆框。 |
-| 🔤 英文源稿归一化 | **支持纯英文设计稿直接简化**<br>解决拿到纯英文稿（如 "1-Click Copy"、"Instant Buy"）无法精简的痛点，通过 298+ 英文别名倒排索引直接逆向提炼为紧凑单词并映射全语种。 | 纯英文设计稿无需中转翻译即可直接精简，出海国际项目体验流畅。 |
-| 🌐 全球 48 语种直出 | **全语种 0ms 本地秒速响应**<br>覆盖德/俄/西/法/意/阿/波兰等全球 48 种主流及小语种的核心概念矩阵，高频词本地直接秒出，不发网络请求。 | 秒点秒出零延迟，不消耗网络配额，丝滑高效。 |
+| ↩️ 画板批量翻译一键撤回 | **新增批量生成「撤回」按钮**<br>解决批量翻译生成多套画板后发现参数或原稿有瑕疵，需手动在图层列表挨个搜寻删除的繁重痛点。 | 点错语种或原稿有误时，一键秒删本次生成的所有多语言克隆画板，恢复原选中与视角，试错 0 负担。 |
+| 🔍 画布全景自动聚焦 | **生成后全选克隆画板并居中聚焦视角**<br>彻底修复以往批量生成后仅选中最后一个画板、其余画板散落需要手动滚映画布查找的痛点。 | 批量翻译完毕后，自动完整框选所有新建画板，平滑居中聚焦视角，多语种对比全貌一目了然。 |
+| 🔒 翻译进行中状态安全锁 | **翻译运行中禁用顶部语言栏与隐藏删除项**<br>解决翻译并发执行时误触切换语言或误删语种导致状态错乱的问题。 | 翻译中光标呈现禁用态、隐藏语种删除角标，翻译完成后自动恢复，杜绝高频连击与误操作。 |
+| 🛡️ 富文本标签泄漏防护 | **全面加固特殊字符与股票/金融卡片标签还原**<br>解决包含股票代码、价格变动百分比等特殊混排文案时偶发泄露 `<s id="0">` 标签的问题。 | 局部加粗、涨跌颜色与文本混排 100% 纯净还原，排版不留任何脏标签，出海设计更稳妥。 |
 
 ---
 
@@ -61,7 +62,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.1.0.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.0.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.1.1.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.1.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：

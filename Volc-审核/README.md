@@ -23,14 +23,18 @@
 
 #### 🇨🇳 中文版：
 ```text
-【v1.1.0 更新动态】
-解决多语言翻译文案冗长、无法放进按钮的痛点，新增“算法简化”开关：自动剥离冗余修饰，将所有语种的 UI 文案直接压缩为单个单词。
+【v1.1.1 更新动态】
+1. 画板批量翻译体验升级：新增「一键撤回」功能，支持秒删本次生成的全部克隆画板；生成完毕自动全选新画板并居中平滑聚焦视野，多语种对比一目了然。
+2. 翻译状态安全锁：翻译进行中自动禁用顶部语言栏并隐藏删除项，杜绝并发执行时的误触与状态错乱。
+3. 富文本标签防护：全面加固特殊字符及股票/金融数据卡片的标签解析与回填，彻底杜绝富文本标签残留。
 ```
 
 #### 🇺🇸 English Version (for Figma Reviewers):
 ```text
-[What's New in v1.1.0]
-Fixes the issue where localized translations are too verbose to fit inside buttons and labels. Adds an "Algorithmic Simplification" switch that automatically strips redundant modifiers and compresses UI copy across all languages into single words.
+[What's New in v1.1.1]
+1. Batch Artboard Translation Upgrades: Added a 1-click Undo button to instantly delete generated artboards; automatically selects all newly created artboards and centers the viewport for seamless comparison.
+2. Translation State Lock: Disables the top language switcher and hides delete badges while translation is in progress, preventing accidental input and state conflicts.
+3. Rich Text Tag Safety: Enhanced parsing for special alphanumeric patterns and financial cards, eliminating any internal tag leaks.
 ```
 
 ---
