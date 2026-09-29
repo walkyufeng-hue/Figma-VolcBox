@@ -640,7 +640,7 @@
     .editor-textarea {
       flex: 1;
       border: none;
-      padding: 6px 8px;
+      padding: 6px 72px 6px 8px;
       font-family: var(--font-mono);
       font-size: 11px;
       line-height: 1.5;
@@ -653,6 +653,42 @@
       white-space: pre-wrap;
       word-break: break-all;
       overflow-wrap: break-word;
+    }
+    .editor-format-btn {
+      position: absolute;
+      top: 5px;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-deck);
+      border-radius: 4px;
+      color: var(--text-sub);
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      z-index: 5;
+      user-select: none;
+    }
+    .editor-format-btn:hover {
+      background: var(--bg-muted);
+      color: var(--accent-orange, #FF5500);
+      border-color: rgba(255, 85, 0, 0.35);
+      transform: translateY(-0.5px);
+    }
+    body.theme-dark .editor-format-btn {
+      background: #1B1E28;
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #A0A5B8;
+    }
+    body.theme-dark .editor-format-btn:hover {
+      background: #232734;
+      color: #FF7733;
+      border-color: rgba(255, 119, 51, 0.4);
     }
 
     /* --- AFFIX ROWS --- */
@@ -1420,7 +1456,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
-      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.1</span></div>
+      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.2</span></div>
     </footer>
   </div>
 
@@ -2289,11 +2325,15 @@
         const renderMain = () => {
            return `
              ${modalHtml}
-             <div class="editor-deck" style="flex: 1; margin: 0;">
+             <div class="editor-deck" style="flex: 1; margin: 0; position: relative;">
                <div class="line-numbers" id="line-numbers">
                  ${state.fillLines.map((_, i) => `<div>${i + 1}</div>`).join('')}
                </div>
-               <textarea class="editor-textarea" id="fill-textarea" onscroll="document.getElementById('line-numbers').scrollTop = this.scrollTop" oninput="updateFillLines(this.value)">${state.fillLines.join('\n')}</textarea>
+               <textarea class="editor-textarea" id="fill-textarea" onscroll="document.getElementById('line-numbers').scrollTop = this.scrollTop" oninput="updateFillLines(this.value)" onpaste="handleFillPaste(event)">${state.fillLines.join('\n')}</textarea>
+               <button class="editor-format-btn" onclick="formatFillContent()" title="智能识别表格Tab、多空格、逗号或分号并自动换行">
+                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h14"/><polyline points="15 15 18 18 21 15"/></svg>
+                 <span>智能分行</span>
+               </button>
              </div>
 
              <div style="display: flex; justify-content: space-between; align-items: center; margin: 4px 0 2px 0;">
@@ -3508,7 +3548,7 @@ echo "=========================================="
         document.body.appendChild(measureDiv);
       }
 
-      const paddingX = 16; // 8px left + 8px right
+      const paddingX = 80; // 8px left + 72px right for format button
       const targetWidth = Math.max(20, textarea.clientWidth - paddingX);
       measureDiv.style.width = targetWidth + 'px';
 
@@ -3531,6 +3571,145 @@ echo "=========================================="
       fillSaveDebounce = setTimeout(() => {
         savePluginState();
       }, 500);
+    };
+
+    window.showToast = function(msg, isError = false) {
+      parent.postMessage({ pluginMessage: { type: 'toast', payload: { message: msg, error: isError } } }, '*');
+    };
+
+    window.parseFormattedTextToLines = function(rawText) {
+      if (!rawText || typeof rawText !== 'string') return [];
+      const text = rawText.trim();
+      if (!text) return [];
+
+      // 1. JSON Array check: ["item1", "item2"]
+      if (text.startsWith('[') && text.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(item => typeof item === 'object' ? JSON.stringify(item) : String(item).trim()).filter(Boolean);
+          }
+        } catch (e) {}
+      }
+
+      // 2. Markdown Table check: | col1 | col2 |
+      if (text.includes('|')) {
+        const rawLines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const isMdTable = rawLines.length > 0 && rawLines.every(l => l.startsWith('|') && l.endsWith('|'));
+        if (isMdTable) {
+          const items = [];
+          for (const line of rawLines) {
+            if (/^\|[-:\s|]+\|$/.test(line)) continue; // skip header separator
+            const cells = line.slice(1, -1).split('|').map(c => c.trim()).filter(Boolean);
+            items.push(...cells);
+          }
+          if (items.length > 1) return items;
+        }
+      }
+
+      // 3. Tab-separated (Excel / Google Sheets / TSV / Airtable)
+      if (text.includes('\t')) {
+        const rawLines = text.split(/\r?\n/);
+        const items = [];
+        for (const line of rawLines) {
+          const cells = line.split('\t').map(c => c.trim()).filter(Boolean);
+          items.push(...cells);
+        }
+        if (items.length > 1) return items;
+      }
+
+      // 4. Split by existing newlines
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      if (lines.length === 1) {
+        const singleLine = lines[0];
+
+        // 4a. Multi-space check (2 or more spaces between items, e.g. from table copy)
+        // Preserves single space within multi-word phrases like "Pradedanti nauda", "Sochar nua"
+        if (/[ \t]{2,}/.test(singleLine)) {
+          const items = singleLine.split(/[ \t]{2,}/).map(s => s.trim()).filter(Boolean);
+          if (items.length > 1) return items;
+        }
+
+        // 4b. Numbered list on a single line: "1. item1 2. item2" or "1、item1 2、item2" or "① item1 ② item2"
+        if (/(?:^|\s+)(?:\d+[.、]|[①-⑩]|\(\d+\))\s*/.test(singleLine)) {
+          const parts = singleLine.split(/(?:^|\s+)(?:\d+[.、]|[①-⑩]|\(\d+\))\s*/).map(s => s.trim()).filter(Boolean);
+          if (parts.length > 1) return parts;
+        }
+
+        // 4c. Delimiter check (顿号、中文逗号、分号、带空格的斜杠/竖线、非数字包裹的英文逗号)
+        // Protects thousand numbers like "1,000,000"
+        const delimiterRegex = /[，、；;]|\s+[/|]\s+|(?<!\d)\s*,\s*(?!\d)/;
+        if (delimiterRegex.test(singleLine)) {
+          const items = singleLine.split(new RegExp(delimiterRegex.source, 'g')).map(s => s.trim()).filter(Boolean);
+          if (items.length > 1) return items;
+        }
+      } else {
+        // Multiple lines: check if individual lines contain multi-space or tabs
+        let hasSubSplits = false;
+        const items = [];
+        for (const line of lines) {
+          if (/[ \t]{2,}/.test(line)) {
+            hasSubSplits = true;
+            items.push(...line.split(/[ \t]{2,}/).map(s => s.trim()).filter(Boolean));
+          } else {
+            items.push(line);
+          }
+        }
+        if (hasSubSplits && items.length > lines.length) return items;
+        return lines;
+      }
+
+      return lines;
+    };
+
+    window.handleFillPaste = function(e) {
+      const clipboardData = e.clipboardData || window.clipboardData;
+      if (!clipboardData) return;
+      const pastedText = clipboardData.getData('text');
+      if (!pastedText) return;
+
+      const parsed = window.parseFormattedTextToLines(pastedText);
+      if (parsed && parsed.length > 1) {
+        e.preventDefault();
+        const textarea = e.target;
+        const replacement = parsed.join('\n');
+        
+        let success = false;
+        try {
+          success = document.execCommand('insertText', false, replacement);
+        } catch (err) {}
+
+        if (!success) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const currentVal = textarea.value;
+          textarea.value = currentVal.substring(0, start) + replacement + currentVal.substring(end);
+          textarea.selectionStart = textarea.selectionEnd = start + replacement.length;
+        }
+        
+        window.updateFillLines(textarea.value);
+        window.showToast(`✨ 已智能识别格式并分拆为 ${parsed.length} 行数据`);
+      }
+    };
+
+    window.formatFillContent = function() {
+      const textarea = document.getElementById('fill-textarea');
+      if (!textarea) return;
+      const val = textarea.value;
+      if (!val || !val.trim()) {
+        window.showToast('文本框为空，无需分行');
+        return;
+      }
+
+      const parsed = window.parseFormattedTextToLines(val);
+      if (parsed && parsed.length > 1 && parsed.join('\n') !== val.trim()) {
+        textarea.value = parsed.join('\n');
+        window.updateFillLines(textarea.value);
+        window.showToast(`✨ 已智能拆分为 ${parsed.length} 行数据`);
+      } else {
+        window.showToast('当前内容已是规范单行格式');
+      }
     };
 
     window.startSmartFill = function() {

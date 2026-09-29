@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v1.1.1-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+[![Version](https://img.shields.io/badge/version-v1.1.2-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
 [![Website](https://img.shields.io/badge/website-figma--volcbox.pages.dev-orange.svg?style=flat-square)](https://figma-volcbox.pages.dev)
 [![Figma](https://img.shields.io/badge/Figma-Plugin_API-F24E1E?style=flat-square&logo=figma&logoColor=white)](https://www.figma.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.1.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.2.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -27,16 +27,15 @@
 
 ---
 
-## 📢 最近更新 · v1.1.1 版本动态
+## 📢 最近更新 · v1.1.2 版本动态
 
-> 💡 **解决画板批量生成后难撤回、视野丢失及并发切语言误触的痛点：新增画板批量翻译「一键撤回」、生成后全景自动聚焦、翻译状态安全锁及富文本标签泄漏防护。**
+> 💡 **解决外部表格及文本横排复制后挤在单行无法填充的痛点：外部粘贴智能识别自动换行，新增「✨ 智能分行」一键整理。**
 
 | 模块 | 🎯 更新亮点 | ⚡ 实际设计收益 |
 | :--- | :--- | :--- |
-| ↩️ 画板批量翻译一键撤回 | **新增批量生成「撤回」按钮**<br>解决批量翻译生成多套画板后发现参数或原稿有瑕疵，需手动在图层列表挨个搜寻删除的繁重痛点。 | 点错语种或原稿有误时，一键秒删本次生成的所有多语言克隆画板，恢复原选中与视角，试错 0 负担。 |
-| 🔍 画布全景自动聚焦 | **生成后全选克隆画板并居中聚焦视角**<br>彻底修复以往批量生成后仅选中最后一个画板、其余画板散落需要手动滚映画布查找的痛点。 | 批量翻译完毕后，自动完整框选所有新建画板，平滑居中聚焦视角，多语种对比全貌一目了然。 |
-| 🔒 翻译进行中状态安全锁 | **翻译运行中禁用顶部语言栏与隐藏删除项**<br>解决翻译并发执行时误触切换语言或误删语种导致状态错乱的问题。 | 翻译中光标呈现禁用态、隐藏语种删除角标，翻译完成后自动恢复，杜绝高频连击与误操作。 |
-| 🛡️ 富文本标签泄漏防护 | **全面加固特殊字符与股票/金融卡片标签还原**<br>解决包含股票代码、价格变动百分比等特殊混排文案时偶发泄露 `<s id="0">` 标签的问题。 | 局部加粗、涨跌颜色与文本混排 100% 纯净还原，排版不留任何脏标签，出海设计更稳妥。 |
+| ✨ 外部粘贴智能识别 | **外部粘贴智能识别自动换行**<br>解决从 Excel、Google Sheets、网页表格横向复制多项数据粘贴后挤在第 1 行无法按图层填充的痛点。 | ⌘+V 粘贴瞬间自动识别制表符（Tab）与多空格，横排表格直接炸开为垂直多行，保留词组内部合法空格，开箱即用。 |
+| 🪄 一键智能分行整理 | **输入框新增「智能分行」快捷按钮**<br>解决已粘贴或已有横排内容需重新排版的繁琐操作。 | 无需重新复制，点击文本框右上角「智能分行」按钮，一键瞬间重新切分规整，省去手动敲回车的机械操作。 |
+| 🛡️ 兼容多格式与安全保护 | **全场景分隔符支持与数值安全防切**<br>全面支持 Tab、多空格、顿号、逗号、分号、JSON 数组及编号列表。 | 智能保护价格千分位数值（如 `1,000,000`）不被误切，支持 ⌘+Z 撤回，灵活稳妥。 |
 
 ---
 
@@ -62,7 +61,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.1.1.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.1.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.1.2.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.2.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：
