@@ -23,6 +23,9 @@ const CONFIG = {
 const DEFAULT_SETTINGS = {
   version: 1,
   theme: 'auto',
+  enabledModules: ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+  moduleOrder: ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+  docSyncEnabled: false,
   activeProviderId: 'free-fast',
   customLlm: {
     preset: 'deepseek',
@@ -109,6 +112,10 @@ const DEFAULT_SETTINGS = {
     syncKey: '',
     lastSyncTime: null,
     autoSync: true,
+  },
+  accountSync: {
+    enabled: true,
+    lastSyncTime: null,
   },
   theme: 'light',
 };
@@ -923,7 +930,18 @@ const StorageEngine = {
       const raw = await figma.clientStorage.getAsync(CONFIG.STORAGE_KEYS.SETTINGS);
       if (raw && typeof raw === 'string') {
         const parsed = JSON.parse(raw);
-        return this.deepMerge(DEFAULT_SETTINGS, parsed);
+        const merged = this.deepMerge(DEFAULT_SETTINGS, parsed);
+        if (Array.isArray(merged.enabledModules) && !merged.enabledModules.includes('import')) {
+          const idx = merged.enabledModules.indexOf('tools');
+          if (idx !== -1) merged.enabledModules.splice(idx, 0, 'import');
+          else merged.enabledModules.push('import');
+        }
+        if (Array.isArray(merged.moduleOrder) && !merged.moduleOrder.includes('import')) {
+          const idx = merged.moduleOrder.indexOf('tools');
+          if (idx !== -1) merged.moduleOrder.splice(idx, 0, 'import');
+          else merged.moduleOrder.push('import');
+        }
+        return merged;
       }
     } catch (e) {
       console.error('[Get Settings Error]', e);
@@ -998,6 +1016,13 @@ const StorageEngine = {
 // =====================================================================
 const CloudSyncEngine = {
   ENDPOINT: 'https://api.restful-api.dev/objects',
+  DIRECTORY_ID: 'ff808181a09d98f701a0ff5e4bbd670a',
+  userSyncCache: new Map(),
+
+  userKey(userId) {
+    if (!userId) return 'u_anonymous';
+    return 'u_' + String(userId).replace(/[^a-zA-Z0-9_]/g, '_');
+  },
 
   cleanKey(key) {
     if (!key) return '';
@@ -1014,6 +1039,8 @@ const CloudSyncEngine = {
       version: 1,
       updatedAt: new Date().toISOString(),
       settings: {
+        enabledModules: settings.enabledModules || ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+        moduleOrder: settings.moduleOrder || ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
         customLlm: settings.customLlm,
         providerCredentials: settings.providerCredentials,
         translation: settings.translation,
@@ -1024,6 +1051,153 @@ const CloudSyncEngine = {
     };
   },
 
+  async registerWithControlCenter(syncKey) {
+    return true;
+  },
+
+  async resolveUserSyncId(userId, settingsToSeed) {
+    const key = this.userKey(userId);
+    if (this.userSyncCache.has(key)) {
+      return this.userSyncCache.get(key);
+    }
+
+    try {
+      // 1. Fetch current directory
+      const dirRes = await fetch(`${this.ENDPOINT}/${this.DIRECTORY_ID}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (dirRes.ok) {
+        const dirObj = await dirRes.json();
+        const existingSyncId = dirObj.data?.[key];
+        if (existingSyncId) {
+          this.userSyncCache.set(key, existingSyncId);
+          return existingSyncId;
+        }
+
+        // 2. User not in directory, create a new sync object
+        const createRes = await fetch(this.ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'VolcBox_AccountSync',
+            data: this.extractSyncPayload(settingsToSeed || {})
+          })
+        });
+
+        if (!createRes.ok) {
+          throw new Error(`创建账号同步实例失败: HTTP ${createRes.status}`);
+        }
+
+        const newObj = await createRes.json();
+        const newSyncId = newObj.id;
+
+        // 3. Register into directory via PUT to preserve all users
+        const updatedDirData = { ...(dirObj.data || {}), [key]: newSyncId };
+        await fetch(`${this.ENDPOINT}/${this.DIRECTORY_ID}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'VolcBox_User_Directory_v1',
+            data: updatedDirData
+          })
+        });
+
+        this.userSyncCache.set(key, newSyncId);
+        return newSyncId;
+      }
+    } catch (e) {
+      console.warn('[Resolve User Sync ID Error]', e);
+    }
+    return null;
+  },
+
+  async pushForUser(userId, settings) {
+    const syncId = await this.resolveUserSyncId(userId, settings);
+    if (!syncId) return null;
+
+    const payload = {
+      name: 'VolcBox_AccountSync',
+      data: this.extractSyncPayload(settings)
+    };
+
+    const res = await fetch(`${this.ENDPOINT}/${syncId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(`云端同步推送失败: HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    return {
+      syncId,
+      updatedAt: data.data?.updatedAt || new Date().toISOString()
+    };
+  },
+
+  async pullForUser(userId) {
+    const syncId = await this.resolveUserSyncId(userId);
+    if (!syncId) return null;
+
+    const res = await fetch(`${this.ENDPOINT}/${syncId}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      throw new Error(`拉取云端配置失败: HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    return {
+      syncId,
+      updatedAt: data.data?.updatedAt || new Date().toISOString(),
+      settings: data.data?.settings || null
+    };
+  },
+
+  async syncForUser(userId, currentLocalSettings) {
+    const key = this.userKey(userId);
+    const dirRes = await fetch(`${this.ENDPOINT}/${this.DIRECTORY_ID}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!dirRes.ok) return null;
+
+    const dirObj = await dirRes.json();
+    const existingSyncId = dirObj.data?.[key];
+
+    if (!existingSyncId) {
+      // First time for this Figma account: push current settings as cloud baseline
+      const pushed = await this.pushForUser(userId, currentLocalSettings);
+      return {
+        isNew: true,
+        updatedAt: pushed?.updatedAt || new Date().toISOString()
+      };
+    }
+
+    this.userSyncCache.set(key, existingSyncId);
+    const cloudRecord = await this.pullForUser(userId);
+    if (cloudRecord && cloudRecord.settings) {
+      const localSyncTime = currentLocalSettings.accountSync?.lastSyncTime;
+      const cloudTime = cloudRecord.updatedAt;
+
+      if (!localSyncTime || new Date(cloudTime) > new Date(localSyncTime)) {
+        return {
+          appliedSettings: cloudRecord.settings,
+          updatedAt: cloudTime
+        };
+      }
+    }
+
+    return {
+      appliedSettings: null,
+      updatedAt: cloudRecord?.updatedAt || new Date().toISOString()
+    };
+  },
+
+  // Legacy manual sync methods
   async createSync(settings) {
     const payload = {
       name: 'VolcBox_CloudSync',
@@ -1678,6 +1852,26 @@ const SmartMockEngine = {
 
 let lastSchemeCreatedNodes = [];
 let lastSchemeOriginalTargets = [];
+let accountSyncDebounceTimer = null;
+
+function getCurrentUserSafely() {
+  try {
+    if (typeof figma !== 'undefined' && figma.currentUser) {
+      return {
+        id: figma.currentUser.id || 'local_user',
+        name: figma.currentUser.name || '当前账号',
+        photoUrl: figma.currentUser.photoUrl || null,
+      };
+    }
+  } catch (e) {
+    console.warn('[Get Current User Warning]', e);
+  }
+  return {
+    id: 'local_user',
+    name: '当前账号',
+    photoUrl: null,
+  };
+}
 
 const Handlers = {
   // --- 1. Selection & Core Handlers ---
@@ -1690,8 +1884,33 @@ const Handlers = {
     const updated = await StorageEngine.saveSettings(payload);
     sendToUI({ type: 'settings/updated', requestId, payload: updated });
 
-    // Background auto-sync if sync key is bound
-    if (updated.cloudSync?.enabled && updated.cloudSync?.syncKey && updated.cloudSync?.autoSync) {
+    // Background silent auto-sync via Figma account
+    if (updated.accountSync?.enabled !== false) {
+      const user = getCurrentUserSafely();
+      const userId = user.id;
+      if (accountSyncDebounceTimer) clearTimeout(accountSyncDebounceTimer);
+      accountSyncDebounceTimer = setTimeout(async () => {
+        try {
+          const res = await CloudSyncEngine.pushForUser(userId, updated);
+          if (res) {
+            if (!updated.accountSync) updated.accountSync = {};
+            updated.accountSync.lastSyncTime = res.updatedAt;
+            await StorageEngine.saveSettings({ accountSync: updated.accountSync });
+            sendToUI({
+              type: 'account/sync-status-updated',
+              payload: {
+                success: true,
+                status: 'synced',
+                lastSyncTime: res.updatedAt,
+                settings: updated
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('[Background Account AutoSync Error]', e);
+        }
+      }, 1000);
+    } else if (updated.cloudSync?.enabled && updated.cloudSync?.syncKey && updated.cloudSync?.autoSync) {
       setTimeout(async () => {
         try {
           const res = await CloudSyncEngine.pushSync(updated.cloudSync.syncKey, updated);
@@ -1701,6 +1920,123 @@ const Handlers = {
           console.warn('[Background AutoSync Error]', e);
         }
       }, 1200);
+    }
+  },
+
+  'account/toggle-sync': async (requestId, payload) => {
+    const enabled = !!payload?.enabled;
+    const current = await StorageEngine.getSettings();
+    const accountSync = { ...(current.accountSync || {}), enabled };
+    const updated = await StorageEngine.saveSettings({ accountSync });
+    
+    if (enabled) {
+      const user = getCurrentUserSafely();
+      const userId = user.id;
+      try {
+        const res = await CloudSyncEngine.pushForUser(userId, updated);
+        accountSync.lastSyncTime = res?.updatedAt || new Date().toISOString();
+        await StorageEngine.saveSettings({ accountSync });
+        figma.notify('☁️ 已开启 Figma 账号云同步');
+        sendToUI({
+          type: 'account/sync-status-updated',
+          requestId,
+          payload: {
+            success: true,
+            status: 'synced',
+            lastSyncTime: accountSync.lastSyncTime,
+            settings: updated,
+            message: '☁️ 已开启 Figma 账号云同步'
+          }
+        });
+        return;
+      } catch (e) {
+        console.warn('[Toggle Account Sync Error]', e);
+      }
+    } else {
+      figma.notify('已关闭账号云同步');
+    }
+
+    sendToUI({
+      type: 'account/sync-status-updated',
+      requestId,
+      payload: {
+        success: true,
+        status: enabled ? 'synced' : 'disabled',
+        settings: updated
+      }
+    });
+  },
+
+  'account/manual-sync': async (requestId) => {
+    try {
+      const current = await StorageEngine.getSettings();
+      const user = getCurrentUserSafely();
+      const userId = user.id;
+      const res = await CloudSyncEngine.pushForUser(userId, current);
+      const accountSync = {
+        ...(current.accountSync || {}),
+        enabled: true,
+        lastSyncTime: res?.updatedAt || new Date().toISOString()
+      };
+      const updated = await StorageEngine.saveSettings({ accountSync });
+      figma.notify('✨ 云端配置已同步！');
+      sendToUI({
+        type: 'account/sync-status-updated',
+        requestId,
+        payload: {
+          success: true,
+          status: 'synced',
+          lastSyncTime: accountSync.lastSyncTime,
+          settings: updated,
+          message: '✨ 云端配置已同步！'
+        }
+      });
+    } catch (e) {
+      console.error('[Manual Sync Error]', e);
+      figma.notify('同步失败: ' + e.message, { error: true });
+      sendToUI({
+        type: 'account/sync-status-updated',
+        requestId,
+        payload: { success: false, error: e.message }
+      });
+    }
+  },
+
+  'config/save-to-document': async (requestId, payload) => {
+    try {
+      const dataToSave = payload || await StorageEngine.getSettings();
+      figma.root.setPluginData('volcbox_doc_config', JSON.stringify(dataToSave));
+      await StorageEngine.saveSettings({ docSyncEnabled: true });
+      figma.notify('🔗 已成功绑定并写入当前 Figma 文档！');
+      sendToUI({
+        type: 'config/document-status',
+        requestId,
+        payload: { success: true, hasDocConfig: true }
+      });
+    } catch (e) {
+      console.error('[Save to Doc Error]', e);
+      figma.notify('写入文档失败: ' + e.message, { error: true });
+    }
+  },
+
+  'config/load-from-document': async (requestId) => {
+    try {
+      const raw = figma.root.getPluginData('volcbox_doc_config');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const updated = await StorageEngine.saveSettings(parsed);
+        figma.notify('📥 已成功从当前 Figma 文档恢复配置！');
+        sendToUI({
+          type: 'app/initialized',
+          requestId,
+          payload: { settings: updated, hasDocConfig: true }
+        });
+      } else {
+        figma.notify('当前文档未存储 VolcBox 配置');
+      }
+    } catch (e) {
+      console.error('[Load from Doc Error]', e);
+      figma.notify('读取文档配置失败: ' + e.message, { error: true });
     }
   },
 
@@ -2988,6 +3324,144 @@ const Handlers = {
     }
   },
 
+  'artboards/render-composite-for-local': async (requestId, payload) => {
+    const selection = figma.currentPage.selection;
+    if (!selection || selection.length === 0) {
+      figma.notify('请先选中需要拼图的画板或图层', { error: true });
+      sendToUI({
+        type: 'task/failed',
+        requestId,
+        payload: { taskId: requestId, error: { message: '未选中图层' } },
+      });
+      return;
+    }
+
+    figma.notify('⏳ 正在导出并合成拼图...', { timeout: 1500 });
+
+    try {
+      const rows = LayoutEngine.groupByCanvasRows(selection);
+      const rowsPayload = [];
+
+      for (const row of rows) {
+        const rowItems = [];
+        for (const node of row) {
+          // Dynamic safe scaling to prevent browser/clipboard canvas memory overflow on huge artboards
+          const maxDim = Math.max(node.width, node.height);
+          const safeScale = maxDim > 3000 ? 1 : (maxDim > 1800 ? 1.5 : 2);
+          const bytes = await node.exportAsync({
+            format: 'PNG',
+            constraint: { type: 'SCALE', value: safeScale }
+          });
+          rowItems.push({
+            name: node.name,
+            width: Math.round(node.width * safeScale),
+            height: Math.round(node.height * safeScale),
+            bytes
+          });
+        }
+        rowsPayload.push(rowItems);
+      }
+
+      sendToUI({
+        type: 'artboards/do-local-image-clipboard',
+        requestId,
+        payload: { rows: rowsPayload, withTitles: true }
+      });
+    } catch (err) {
+      console.error('[Render Composite For Local Error]', err);
+      figma.notify('导出画板失败: ' + err.message, { error: true });
+    }
+  },
+
+  'artboards/export-files-for-local': async (requestId) => {
+    const selection = figma.currentPage.selection;
+    if (!selection || selection.length === 0) {
+      figma.notify('请先选中需要复制的画板或图层', { error: true });
+      sendToUI({
+        type: 'task/failed',
+        requestId,
+        payload: { taskId: requestId, error: { message: '未选中图层' } },
+      });
+      return;
+    }
+
+    figma.notify('⏳ 正在导出画板文件...', { timeout: 1500 });
+
+    try {
+      const sortedNodes = LayoutEngine.sortByVisualOrder(selection);
+
+      const files = [];
+      for (let i = 0; i < sortedNodes.length; i++) {
+        const node = sortedNodes[i];
+        const bytes = await node.exportAsync({
+          format: 'PNG',
+          constraint: { type: 'SCALE', value: 2 }
+        });
+        const safeName = (node.name || `Artboard_${i + 1}`).replace(/[\\/:*?"<>|]/g, '_');
+        files.push({
+          name: safeName,
+          bytes
+        });
+      }
+
+      sendToUI({
+        type: 'artboards/do-local-files-clipboard',
+        requestId,
+        payload: { files }
+      });
+    } catch (err) {
+      console.error('[Export Files For Local Error]', err);
+      figma.notify('导出画板失败: ' + err.message, { error: true });
+    }
+  },
+
+  'export/export-selected-artboards': async (requestId) => {
+    const selection = figma.currentPage.selection;
+    if (!selection || selection.length === 0) {
+      figma.notify('请先选中需要导出的画板或图层', { error: true });
+      sendToUI({
+        type: 'task/failed',
+        requestId,
+        payload: { taskId: requestId, error: { message: '未选中图层' } },
+      });
+      return;
+    }
+
+    figma.notify('⏳ 正在导出所选画板...', { timeout: 1500 });
+
+    try {
+      const sortedNodes = LayoutEngine.sortByVisualOrder(selection);
+
+      const items = [];
+      for (let i = 0; i < sortedNodes.length; i++) {
+        const node = sortedNodes[i];
+        const bytes = await node.exportAsync({
+          format: 'PNG',
+          constraint: { type: 'SCALE', value: 2 }
+        });
+        const safeName = (node.name || `Artboard_${i + 1}`).replace(/[\\/:*?"<>|]/g, '_');
+        items.push({
+          name: safeName,
+          format: 'PNG',
+          bytes
+        });
+      }
+
+      sendToUI({
+        type: 'export/completed-artboards',
+        requestId,
+        payload: {
+          items,
+          zipName: `所选画板切图_${items.length}张`
+        }
+      });
+      figma.notify(`✅ 成功导出 ${items.length} 个画板切图`);
+    } catch (err) {
+      console.error('[Export Selected Artboards Error]', err);
+      figma.notify('批量导出失败: ' + err.message, { error: true });
+    }
+  },
+
   'color/preview': async (requestId, payload) => {
     const { hue = 0, saturation = 0, lightness = 0, scope = 'all', protectNeutrals = true, version = 0 } = payload || {};
     if (version > 0 && version < currentColorVersion) {
@@ -3275,13 +3749,14 @@ const Handlers = {
     figma.viewport.scrollAndZoomIntoView([container]);
     const fitZoom = figma.viewport.zoom;
 
+    // 缩放到舒适全景比例（缩放至 78%，上限不超过 1.0），确保四周有充裕视野空间
     const comfortableZoom = Math.min(fitZoom * 0.78, 1.0);
     figma.viewport.zoom = comfortableZoom;
 
     // 2. 避免被 420px 宽度的插件面板遮挡：向右平移至清晰的可见区域
     const containerCenterX = container.x + container.width / 2;
     const containerCenterY = container.y + container.height / 2;
-    const offsetScreenPx = 220;
+    const offsetScreenPx = 220; // 对应 420px 插件面板的一半及安全边距
     figma.viewport.center = {
       x: containerCenterX - (offsetScreenPx / comfortableZoom),
       y: containerCenterY
@@ -3404,14 +3879,52 @@ async function bootstrap() {
   const styleLibrary = await StorageEngine.getStyleLibrary();
   const selection = SelectionEngine.scan();
 
+  const currentUser = getCurrentUserSafely();
+
+  let hasDocConfig = false;
+  try {
+    const rawDoc = figma.root.getPluginData('volcbox_doc_config');
+    if (rawDoc) {
+      hasDocConfig = true;
+    }
+  } catch (e) {}
+
   if (settings.cloudSync?.syncKey) {
     void CloudSyncEngine.registerWithControlCenter(settings.cloudSync.syncKey);
   }
 
   sendToUI({
     type: 'app/initialized',
-    payload: { settings, styleLibrary, selection },
+    payload: { settings, styleLibrary, selection, hasDocConfig, currentUser },
   });
+
+  // 5. Silent Auto-Sync on Launch
+  if (settings.accountSync?.enabled !== false && currentUser?.id) {
+    setTimeout(async () => {
+      try {
+        const syncRes = await CloudSyncEngine.syncForUser(currentUser.id, settings);
+        if (syncRes && syncRes.appliedSettings) {
+          const merged = await StorageEngine.saveSettings(syncRes.appliedSettings);
+          if (!merged.accountSync) merged.accountSync = {};
+          merged.accountSync.lastSyncTime = syncRes.updatedAt;
+          await StorageEngine.saveSettings({ accountSync: merged.accountSync });
+          sendToUI({
+            type: 'account/sync-status-updated',
+            payload: {
+              success: true,
+              status: 'synced',
+              lastSyncTime: syncRes.updatedAt,
+              settings: merged,
+              message: '✨ 已自动同步云端偏好设置'
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('[Account AutoSync Launch Error]', e);
+      }
+    }, 400);
+  }
 }
 
 bootstrap();
+

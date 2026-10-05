@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-v1.1.2-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+[![Version](https://img.shields.io/badge/version-v1.1.3-blue.svg?style=flat-square)](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
 [![Website](https://img.shields.io/badge/website-figma--volcbox.pages.dev-orange.svg?style=flat-square)](https://figma-volcbox.pages.dev)
 [![Figma](https://img.shields.io/badge/Figma-Plugin_API-F24E1E?style=flat-square&logo=figma&logoColor=white)](https://www.figma.com)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.2.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.3.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -27,15 +27,16 @@
 
 ---
 
-## 📢 最近更新 · v1.1.2 版本动态
+## 📢 最近更新 · v1.1.3 版本动态
 
-> 💡 **解决外部表格及文本横排复制后挤在单行无法填充的痛点：外部粘贴智能识别自动换行，新增「✨ 智能分行」一键整理。**
+> 💡 **解决模块固定无法定制、常用功能找寻繁琐及跨文件配置易丢失痛点：工作台模块全自选与自由排序、独立图片批量导入页签、三维配置云同步。**
 
 | 模块 | 🎯 更新亮点 | ⚡ 实际设计收益 |
 | :--- | :--- | :--- |
-| ✨ 外部粘贴智能识别 | **外部粘贴智能识别自动换行**<br>解决从 Excel、Google Sheets、网页表格横向复制多项数据粘贴后挤在第 1 行无法按图层填充的痛点。 | ⌘+V 粘贴瞬间自动识别制表符（Tab）与多空格，横排表格直接炸开为垂直多行，保留词组内部合法空格，开箱即用。 |
-| 🪄 一键智能分行整理 | **输入框新增「智能分行」快捷按钮**<br>解决已粘贴或已有横排内容需重新排版的繁琐操作。 | 无需重新复制，点击文本框右上角「智能分行」按钮，一键瞬间重新切分规整，省去手动敲回车的机械操作。 |
-| 🛡️ 兼容多格式与安全保护 | **全场景分隔符支持与数值安全防切**<br>全面支持 Tab、多空格、顿号、逗号、分号、JSON 数组及编号列表。 | 智能保护价格千分位数值（如 `1,000,000`）不被误切，支持 ⌘+Z 撤回，灵活稳妥。 |
+| 🎛️ 工作台模块自选与排序 | **功能模块自由启闭与上下排序**<br>解决不同设计师高频功能各不相同、固定排版多余且占位的痛点。 | 在设置页「功能模块」可一键勾选/取消 6 大核心模块（翻译、填充、压缩、调色、导入、小工具）并上下移动自定义顺序，未勾选模块自动隐藏，千人千面。 |
+| 📥 独立「导入」一级页签 | **本地图片批量导入升级为专属页签**<br>解决过去隐匿在二级菜单、操作层级深、铺板效率低的痛点。 | 独立一级导航，配备宽适的拖拽区、行列/间距自适应微调、智能去除文件扩展名开关与进度指示，素材批量上板快准稳。 |
+| ☁️ 三维配置持久化方案 | **文档绑定 + 账号云同步 + 配置代码**<br>解决团队协作或更换工作电脑后配置丢失、重复配置的痛点。 | 支持一键写入当前 Figma 文档根节点（团队共享预设）、绑定云端同步密钥无缝拉取备份、以及快速导入导出配置代码，配置永不丢失。 |
+| 🧼 极简界面与交互优化 | **设置面板精简与交互降噪**<br>去除去设置页多余的返回按钮，优化排序微调按钮视觉，修复用户权限安全提示。 | 设置页首屏即为模块管理，齿轮按钮支持一键切回；按钮排版规整，高频操作流畅无卡顿。 |
 
 ---
 
@@ -61,7 +62,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.1.2.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.2.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.1.3.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.3.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：

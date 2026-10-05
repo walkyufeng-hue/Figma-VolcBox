@@ -80,13 +80,41 @@
       overflow: hidden;
     }
 
-    /* --- TOP MODE KEYPAD (6 KEYS) --- */
+    /* --- TOP HEADER & ADAPTIVE MODULAR KEYPAD --- */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px 6px 10px;
+      flex-shrink: 0;
+      background-color: var(--bg-chassis);
+      border-bottom: 1px solid var(--border-chassis);
+    }
+
     .keypad-container {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      padding: 10px 10px 8px 10px;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+      padding: 0;
+    }
+
+    .settings-gear-btn {
+      width: 28px;
+      height: 28px;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: var(--text-sub);
+    }
+    .settings-gear-btn:hover:not(.active) {
+      color: var(--text-main);
+    }
+    .settings-gear-btn.active {
+      color: var(--accent-blue) !important;
+      border-color: var(--accent-blue) !important;
     }
 
     .tactile-key {
@@ -141,7 +169,7 @@
     /* --- MAIN DECK & SCROLL AREA --- */
     .deck-container {
       flex: 1;
-      margin: 0 10px 8px 10px;
+      margin: 8px 10px 8px 10px;
       background-color: var(--bg-deck);
       border: 1px solid var(--border-deck);
       border-radius: 10px;
@@ -173,10 +201,10 @@
       margin-top: 0 !important;
     }
     .deck-scroll-area > .section-header:first-child {
-      padding-top: 2px !important;
+      padding-top: 6px !important;
     }
     .deck-scroll-area > .preset-bar:first-child {
-      padding-top: 0 !important;
+      padding-top: 4px !important;
     }
     .section-title {
       font-size: 11px;
@@ -437,6 +465,46 @@
       opacity: 0.45;
       cursor: not-allowed;
       box-shadow: none !important;
+    }
+
+    /* --- MODULE REORDER BUTTONS --- */
+    .module-reorder-btn {
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      max-width: 22px;
+      padding: 0;
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-chassis);
+      border-radius: 4px;
+      color: var(--text-sub);
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      transition: all 0.12s ease;
+      box-sizing: border-box;
+      flex-shrink: 0;
+      outline: none;
+    }
+    .module-reorder-btn:hover:not(:disabled) {
+      background-color: var(--bg-hover);
+      color: var(--text-main);
+      border-color: var(--border-deck);
+    }
+    .module-reorder-btn:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+    .module-reorder-btn:disabled {
+      opacity: 0.22;
+      cursor: not-allowed;
+      box-shadow: none !important;
+      background-color: transparent !important;
+      border-color: var(--border-subtle) !important;
+      color: var(--text-muted) !important;
     }
 
     /* --- ACTION BARS --- */
@@ -1411,33 +1479,16 @@
 </head>
 <body>
   <div id="app">
-    <!-- 1. TOP 6 MODE BUTTONS -->
-    <nav class="keypad-container" id="keypad">
-      <button class="tactile-key active" data-tab="translate">
-        <span class="led-dot"></span>
-        <span>翻译</span>
+    <!-- 1. TOP HEADER & ADAPTIVE MODULAR KEYPAD -->
+    <header class="app-header">
+      <nav class="keypad-container" id="keypad"></nav>
+      <button class="settings-gear-btn tactile-key" id="gear-btn" onclick="toggleSettingsTab()" title="工作台功能自选与插件设置">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
       </button>
-      <button class="tactile-key" data-tab="fill">
-        <span class="led-dot"></span>
-        <span>填充</span>
-      </button>
-      <button class="tactile-key" data-tab="compress">
-        <span class="led-dot"></span>
-        <span>压缩</span>
-      </button>
-      <button class="tactile-key" data-tab="color">
-        <span class="led-dot"></span>
-        <span>调色</span>
-      </button>
-      <button class="tactile-key" data-tab="tools">
-        <span class="led-dot"></span>
-        <span>小工具</span>
-      </button>
-      <button class="tactile-key" data-tab="settings">
-        <span class="led-dot"></span>
-        <span>设置</span>
-      </button>
-    </nav>
+    </header>
 
     <!-- 2. MAIN DECK CONTAINER -->
     <main class="deck-container">
@@ -1456,7 +1507,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
-      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.2</span></div>
+      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.3</span></div>
     </footer>
   </div>
 
@@ -1543,6 +1594,29 @@
 
     const DEFAULT_PINNED_CODES = ['en', 'zh-CN', 'ja', 'ko'];
 
+    const SCENARIOS = [
+      { id: 'auto', name: '智能自动识别', icon: '🌐', desc: '根据画板名称与图层上下文自动推断' },
+      { id: 'ecommerce', name: '跨境电商 / 独立站', icon: '🛒', desc: '强化满减立省、商品规格、运费结算、退换货' },
+      { id: 'saas', name: '企业软件 / SaaS后台', icon: '💼', desc: '强化控制台、租户权限、工作流审批、数据看板' },
+      { id: 'social', name: '社交娱乐 / 内容社区', icon: '💬', desc: '强化动态Feed、发帖点赞、关注私信、互动评论' },
+      { id: 'fintech', name: '金融科技 / Web3', icon: '🪙', desc: '强化资产钱包、充提转账、质押年化、交易滑点' },
+      { id: 'gaming', name: '游戏互动 / 娱乐', icon: '🎮', desc: '强化关卡任务、装备背包、排行榜单、成就属性' },
+      { id: 'general', name: '基础通用 / 简短UI', icon: '📄', desc: '严控字符长度，规范大写，防止爆框' }
+    ];
+
+    function getScenarioById(id) {
+      return SCENARIOS.find(s => s.id === id) || SCENARIOS[0];
+    }
+
+    const ALL_MODULES = [
+      { id: 'translate', name: '翻译', icon: '🌐', desc: '多语言极速翻译、画板出海与排版' },
+      { id: 'fill', name: '填充', icon: '✏️', desc: '姓名/数字/城市多模式智能假数据' },
+      { id: 'compress', name: '压缩', icon: '🗜️', desc: 'TinyPNG 无损压缩与批量导出' },
+      { id: 'color', name: '调色', icon: '🎨', desc: '色相/饱和度/明度全局批量调节' },
+      { id: 'import', name: '导入', icon: '📥', desc: '本地多格式图片批量导入与自适应网格排版' },
+      { id: 'tools', name: '小工具', icon: '🧰', desc: '外部剪贴板智能识别与批量切图' },
+    ];
+
     // =====================================================================
     // APP STATE & CORE LOGIC
     // =====================================================================
@@ -1551,6 +1625,7 @@
       activeTab: 'translate',
       targetLanguage: 'en',
       translateMode: 'text',
+      scenario: 'auto',
       simplifyText: true,
       compactUiWidth: true,
       protectText: true,
@@ -1570,6 +1645,7 @@
       lightness: 0,
       selection: { totalSelected: 0, textNodeCount: 0, colorLayerCount: 0 },
       hasLocalService: false,
+      hasDocConfig: false,
       importImages: {
         files: [],
         cols: 5,
@@ -1580,6 +1656,9 @@
       },
       settings: {
         theme: 'light',
+        enabledModules: ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+        moduleOrder: ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+        docSyncEnabled: false,
         activeProviderId: 'free-fast',
         customLlm: {
           preset: 'deepseek',
@@ -1593,6 +1672,9 @@
           pinnedLanguageCodes: ['en', 'zh-CN', 'ja', 'ko'],
           targetLanguage: 'en',
           translateMode: 'text',
+          scenario: 'auto',
+          simplifyText: true,
+          compactUiWidth: true,
           protectText: true,
           preserveRichText: true,
           smartCasing: true,
@@ -1630,9 +1712,14 @@
       if (!state.settings.fill) state.settings.fill = {};
 
       state.settings.theme = state.theme;
+      state.settings.enabledModules = state.settings.enabledModules || ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      state.settings.moduleOrder = state.settings.moduleOrder || ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      state.settings.docSyncEnabled = !!state.settings.docSyncEnabled;
+
       state.settings.translation.pinnedLanguageCodes = state.pinnedCodes;
       state.settings.translation.targetLanguage = state.targetLanguage;
       state.settings.translation.translateMode = state.translateMode;
+      state.settings.translation.scenario = state.scenario;
       state.settings.translation.simplifyText = state.simplifyText !== false;
       state.settings.translation.compactUiWidth = state.simplifyText !== false;
       state.settings.translation.protectText = state.protectText;
@@ -1648,11 +1735,15 @@
           type: 'settings/save',
           payload: {
             theme: state.theme,
+            enabledModules: state.settings.enabledModules,
+            moduleOrder: state.settings.moduleOrder,
+            docSyncEnabled: state.settings.docSyncEnabled,
             activeProviderId: state.settings.activeProviderId,
             customLlm: state.settings.customLlm,
             providerCredentials: state.settings.providerCredentials,
             translation: state.settings.translation,
-            fill: state.settings.fill
+            fill: state.settings.fill,
+            accountSync: state.settings.accountSync
           }
         }
       }, '*');
@@ -1742,7 +1833,8 @@
         name: '新建翻译方案',
         languages: [],
         direction: 'right',
-        spacing: 100
+        spacing: 100,
+        scenario: 'auto'
       };
       render();
     }
@@ -1812,7 +1904,9 @@
           requestId: Date.now().toString(),
           payload: {
             scheme: enrichedProfile,
-            preserveRichText: state.preserveRichText
+            preserveRichText: state.preserveRichText,
+            simplifyText: state.simplifyText !== false,
+            compactUiWidth: state.simplifyText !== false
           }
         }
       }, '*');
@@ -2600,33 +2694,12 @@
         `;
       },
 
-      // 5. TOOLS VIEW
-      tools() {
-        const hasLocal = state.hasLocalService;
+      // 5. IMPORT VIEW
+      import() {
         return `
           <div class="section-header" style="padding-top: 2px;">
-            <span class="section-title">本地服务助手</span>
-          </div>
-
-          <div class="setting-group">
-            <div class="setting-row">
-              <span class="setting-label">本地直拷服务</span>
-              ${hasLocal ? `
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="uninstallLocalService()">卸载</span>
-                  <span style="font-size: 11px; color: var(--accent-green); font-weight: 600;">● 极速直拷已开启</span>
-                </div>
-              ` : `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 11px; color: var(--text-muted);">未开启</span>
-                  <span style="font-size: 11px; color: var(--accent-red); font-weight: 600; cursor: pointer; text-decoration: underline;" onclick="downloadHelperInstaller()">安装</span>
-                </div>
-              `}
-            </div>
-          </div>
-
-          <div class="section-header" style="padding-top: 4px;">
             <span class="section-title">本地图片批量导入</span>
+            <span style="font-size: 10px; color: var(--text-muted);">自动排版与命名</span>
           </div>
 
           <div class="setting-group" style="padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;">
@@ -2692,6 +2765,33 @@
               </div>
             ` : ''}
           </div>
+        `;
+      },
+
+      // 6. TOOLS VIEW
+      tools() {
+        const hasLocal = state.hasLocalService;
+        return `
+          <div class="section-header" style="padding-top: 2px;">
+            <span class="section-title">本地服务助手</span>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-row">
+              <span class="setting-label">本地直拷服务</span>
+              ${hasLocal ? `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="uninstallLocalService()">卸载</span>
+                  <span style="font-size: 11px; color: var(--accent-green); font-weight: 600;">● 极速直拷已开启</span>
+                </div>
+              ` : `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted);">未开启</span>
+                  <span style="font-size: 11px; color: var(--accent-red); font-weight: 600; cursor: pointer; text-decoration: underline;" onclick="downloadHelperInstaller()">安装</span>
+                </div>
+              `}
+            </div>
+          </div>
 
           <div class="section-header" style="padding-top: 4px;">
             <span class="section-title">快捷设计工具</span>
@@ -2755,17 +2855,11 @@
         const availableModels = providerConfig.models || [];
         const modelOptionsHtml = availableModels.map(m => `<option value="${m}">${m}</option>`).join('');
 
-        const cloudSync = state.settings.cloudSync || { enabled: false, syncKey: '', lastSyncTime: null, autoSync: true };
-        const isBound = !!(cloudSync.enabled && cloudSync.syncKey);
-
-        window.maskSyncKey = (key) => {
-          if (!key) return '';
-          if (key.length <= 12) return key;
-          return key.substring(0, 7) + '••••••••' + key.substring(key.length - 4);
-        };
+        const accountSync = state.settings.accountSync || { enabled: true, lastSyncTime: null };
+        const isAccountSyncEnabled = accountSync.enabled !== false;
 
         window.formatSyncTime = (isoStr) => {
-          if (!isoStr) return '从未备份';
+          if (!isoStr) return '从未同步';
           try {
             const d = new Date(isoStr);
             const now = new Date();
@@ -2782,88 +2876,119 @@
           }
         };
 
+        function renderModuleCustomList() {
+          const order = (state.settings?.moduleOrder && state.settings.moduleOrder.length > 0)
+            ? state.settings.moduleOrder
+            : ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+
+          const enabled = (state.settings?.enabledModules && state.settings.enabledModules.length > 0)
+            ? state.settings.enabledModules
+            : ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+
+          return order.map((modId, index) => {
+            const mod = ALL_MODULES.find(m => m.id === modId) || { id: modId, name: modId, icon: '📦' };
+            const isEnabled = enabled.includes(modId);
+            const isFirst = index === 0;
+            const isLast = index === order.length - 1;
+
+            return `
+              <div class="setting-row" style="padding: 6px 14px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 14px; flex-shrink: 0;">${mod.icon}</span>
+                  <span style="font-size: 12px; font-weight: 500; color: ${isEnabled ? 'var(--text-main)' : 'var(--text-muted)'};">${mod.name}</span>
+                  ${isFirst && isEnabled ? `<span style="font-size: 9px; padding: 0 4px; border-radius: 3px; background: rgba(0,102,255,0.1); color: var(--accent-blue); font-weight: 500;">首位</span>` : ''}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    <button class="module-reorder-btn" onclick="moveModuleOrder('${mod.id}', -1)" ${isFirst ? 'disabled' : ''} title="上移">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
+                    </button>
+                    <button class="module-reorder-btn" onclick="moveModuleOrder('${mod.id}', 1)" ${isLast ? 'disabled' : ''} title="下移">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                  </div>
+                  ${UIComponents.Switch(isEnabled, `toggleModuleEnabled('${mod.id}', this.checked)`)}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
         return `
-          <!-- 0. 云端配置同步 (账号密钥体系) -->
+          <!-- 1. 功能模块 -->
           <div class="section-header" style="padding-top: 2px;">
-            <span class="section-title">账号与多端配置同步</span>
-            <span class="section-hint" style="color: ${isBound ? 'var(--accent-green)' : 'var(--text-muted)'}; font-weight: ${isBound ? '600' : 'normal'};">
-              ${isBound ? '● 自动同步中' : '跨设备免配置'}
-            </span>
+            <span class="section-title">功能模块</span>
+            <button onclick="resetAllModules()" style="background: none; border: none; font-size: 10px; color: var(--text-muted); cursor: pointer; padding: 0;" onmouseover="this.style.color='var(--text-main)'" onmouseout="this.style.color='var(--text-muted)'">恢复默认</button>
           </div>
 
           <div class="setting-group">
-            ${isBound ? `
-              <!-- 已绑定状态 -->
-              <div class="setting-row" style="background: var(--bg-muted);">
-                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-                  <span style="font-size: 10.5px; color: var(--text-sub); flex-shrink: 0;">密钥:</span>
-                  <span style="font-size: 11px; font-family: var(--font-mono); font-weight: 600; color: var(--text-main); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${maskSyncKey(cloudSync.syncKey)}</span>
-                </div>
-                <button class="btn btn-secondary" onclick="copySyncKey('${cloudSync.syncKey}')" style="padding: 2px 8px; font-size: 10px; height: 22px; flex-shrink: 0;">📋 复制密钥</button>
-              </div>
-
-              <div class="setting-row" style="font-size: 10px; color: var(--text-sub); justify-content: space-between; min-height: 28px;">
-                <span>上次同步: ${formatSyncTime(cloudSync.lastSyncTime)}</span>
-                <span>包含 Key / 词库 / 偏好等 6 项配置</span>
-              </div>
-
-              <div class="setting-row" style="gap: 6px; padding: 8px 14px;">
-                <button class="btn btn-secondary" id="btn-push-sync" style="flex: 1; height: 26px; font-size: 10.5px;" onclick="pushSyncBackup()">⬆️ 立即备份</button>
-                <button class="btn btn-secondary" id="btn-pull-sync" style="flex: 1; height: 26px; font-size: 10.5px;" onclick="pullSyncBackup()">⬇️ 立即拉取</button>
-                <button class="btn btn-secondary" style="height: 26px; font-size: 10.5px; color: var(--accent-red); border-color: rgba(242,72,34,0.3);" onclick="unbindSyncKey()">解绑</button>
-              </div>
-            ` : `
-              <!-- 未绑定状态 -->
-              <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px;">
-                <div style="font-size: 10.5px; color: var(--text-sub); line-height: 1.4;">
-                  绑定同步密钥/激活码，换设备一键恢复所有 API Key、TinyPNG 池与词库偏好。
-                </div>
-                <div style="display: flex; gap: 6px;">
-                  <input class="input-box" id="input-sync-key" placeholder="输入已有密钥 (如 VB-xxxx...)" style="flex: 1; height: 28px; font-size: 11px; font-family: var(--font-mono);" />
-                  <button class="btn btn-primary" id="btn-bind-sync" style="height: 28px; padding: 0 12px; font-size: 11px; flex-shrink: 0;" onclick="bindSyncKey()">绑定并同步</button>
-                </div>
-                <div style="display: flex; justify-content: flex-end;">
-                  <button onclick="createSyncKey()" style="background: none; border: none; font-size: 10.5px; color: var(--accent-blue); cursor: pointer; text-decoration: underline; padding: 0;">✨ 首次使用？一键创建新密钥并备份</button>
-                </div>
-              </div>
-            `}
+            ${renderModuleCustomList()}
           </div>
 
-          <!-- 1. 官方免费通道状态卡片 -->
+          <!-- 2. 账号云同步 -->
           <div class="section-header" style="padding-top: 4px;">
-            <span class="section-title">官方免费通道</span>
-            <div id="free-channel-status" style="display: flex; align-items: center; gap: 4px;">
-              <span class="section-hint" style="color: var(--accent-green); font-weight: 600;">● 运行正常</span>
-            </div>
+            <span class="section-title">账号云同步</span>
           </div>
 
           <div class="setting-group">
-            <div class="setting-row" style="padding: 10px 14px; min-height: 44px; border-bottom: none;">
-              <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div class="setting-row" style="padding: 10px 14px; justify-content: space-between; align-items: center;">
+              <div style="display: flex; flex-direction: column; gap: 3px;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="status-indicator-dot"></span>
-                  <span style="font-size: 12px; font-weight: 600; color: var(--text-main);">极速翻译引擎</span>
-                  <span style="font-size: 10px; color: var(--text-sub); background: var(--bg-muted); padding: 1px 5px; border-radius: 3px; font-weight: 500;">免配置</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--text-main);">Figma 账号自动同步</span>
+                  <span id="account-sync-badge" style="font-size: 9.5px; padding: 1px 6px; border-radius: 4px; background: rgba(0,102,255,0.08); color: var(--accent-blue); font-weight: 500;">
+                    ${state.currentUser?.name ? '👤 ' + escapeHtml(state.currentUser.name) : '👤 当前账号'}
+                  </span>
                 </div>
-                <span style="font-size: 10.5px; color: var(--text-sub);">全球 100+ 语言即开即用 · 毫秒级多通道加速</span>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--text-sub);">
+                  <span id="account-sync-indicator" style="display: inline-flex; align-items: center; gap: 4px; color: ${isAccountSyncEnabled ? 'var(--accent-green)' : 'var(--text-muted)'};">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: ${isAccountSyncEnabled ? 'var(--accent-green)' : 'var(--text-muted)'}; display: inline-block;"></span>
+                    <span id="account-sync-text">${isAccountSyncEnabled ? (accountSync.lastSyncTime ? '已自动同步 (' + formatSyncTime(accountSync.lastSyncTime) + ')' : '云端就绪') : '未开启同步'}</span>
+                  </span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${isAccountSyncEnabled ? `
+                  <button id="btn-manual-sync" class="btn btn-secondary" onclick="manualTriggerAccountSync()" style="height: 24px; padding: 0 8px; font-size: 10.5px;" title="立即检查云端更新">立即同步</button>
+                ` : ''}
+                ${UIComponents.Switch(isAccountSyncEnabled, `toggleAccountSync(this.checked)`)}
               </div>
             </div>
+          </div>
 
-            <!-- 异常状态与排查建议（动态展开） -->
+          <!-- 3. 官方通道 -->
+          <div class="section-header" style="padding-top: 4px;">
+            <span class="section-title">官方通道</span>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-row" style="padding: 8px 14px; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="status-indicator-dot"></span>
+                <span style="font-size: 12px; font-weight: 500; color: var(--text-main);">极速翻译</span>
+                <span style="font-size: 9.5px; color: var(--text-muted); background: var(--bg-muted); padding: 1px 4px; border-radius: 3px;">免配置</span>
+              </div>
+              <span style="font-size: 10.5px; color: var(--accent-green); font-weight: 500;">● 正常</span>
+            </div>
+
             <div id="free-channel-error-box" style="display: none; margin: 0 14px 10px 14px; padding: 8px 10px; background: rgba(255, 69, 58, 0.06); border: 1px solid rgba(255, 69, 58, 0.2); border-radius: 6px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;">
-                <span style="font-size: 11px; font-weight: 600; color: var(--accent-red);">⚠️ 免费通道连接受阻</span>
-                <span style="font-size: 10px; color: var(--accent-red); cursor: pointer; text-decoration: underline;" onclick="checkFreeChannelHealth()">重新检测</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--accent-red);">连接受阻</span>
+                <span style="font-size: 10px; color: var(--accent-red); cursor: pointer; text-decoration: underline;" onclick="checkFreeChannelHealth()">重试</span>
               </div>
               <div style="font-size: 10px; color: var(--text-sub); line-height: 1.4;">
-                建议：1. 检查当前网络或 VPN 代理设置；2. 在下方配置自定义大模型 API Key 即可稳定使用。
+                检查网络或配置自定义大模型 API Key。
               </div>
             </div>
           </div>
 
-          <!-- 2. 自定义大模型接口卡片 -->
+          <!-- 4. 自定义 AI 大模型 -->
           <div class="section-header" style="padding-top: 4px;">
-            <span class="section-title">自定义 AI 大模型（可选）</span>
+            <span class="section-title">自定义大模型（可选）</span>
           </div>
 
           <div class="setting-group">
@@ -2872,12 +2997,12 @@
               <span class="setting-label" style="min-width: 65px;">服务商</span>
               <div class="select-wrapper" style="max-width: 220px;">
                 <select class="select-custom" id="llm-provider-select" onchange="onLlmProviderChange(this.value)">
-                  <option value="deepseek" ${currentPreset === 'deepseek' ? 'selected' : ''}>DeepSeek AI (官方推荐)</option>
-                  <option value="openai" ${currentPreset === 'openai' ? 'selected' : ''}>OpenAI (ChatGPT / GPT-4o)</option>
-                  <option value="kimi" ${currentPreset === 'kimi' ? 'selected' : ''}>Kimi (月之暗面 Moonshot)</option>
-                  <option value="zhipu" ${currentPreset === 'zhipu' ? 'selected' : ''}>智谱 GLM (GLM-4)</option>
-                  <option value="siliconflow" ${currentPreset === 'siliconflow' ? 'selected' : ''}>SiliconFlow (硅基流动)</option>
-                  <option value="custom" ${currentPreset === 'custom' ? 'selected' : ''}>自定义接口 (Custom API)</option>
+                  <option value="deepseek" ${currentPreset === 'deepseek' ? 'selected' : ''}>DeepSeek AI</option>
+                  <option value="openai" ${currentPreset === 'openai' ? 'selected' : ''}>OpenAI (ChatGPT)</option>
+                  <option value="kimi" ${currentPreset === 'kimi' ? 'selected' : ''}>Kimi (Moonshot)</option>
+                  <option value="zhipu" ${currentPreset === 'zhipu' ? 'selected' : ''}>智谱 GLM</option>
+                  <option value="siliconflow" ${currentPreset === 'siliconflow' ? 'selected' : ''}>SiliconFlow</option>
+                  <option value="custom" ${currentPreset === 'custom' ? 'selected' : ''}>自定义接口</option>
                 </select>
                 <div class="select-arrow">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2887,13 +3012,10 @@
 
             <!-- Row 2: API Key -->
             <div class="setting-row">
-              <div class="setting-label-group" style="min-width: 65px;">
-                <span class="setting-label">API Key</span>
-                <span class="setting-sublabel" style="font-size: 9.5px;">本地存储</span>
-              </div>
+              <span class="setting-label" style="min-width: 65px;">API Key</span>
               <div class="input-with-action" style="max-width: 220px;">
                 <input class="input-box" type="${state.showApiKey ? 'text' : 'password'}" id="custom-api-key" placeholder="${providerConfig.placeholder || 'sk-...'}" value="${custom.apiKey || ''}" oninput="updateCustomLlmField('apiKey', this.value)" style="height: 28px; font-size: 11px; font-family: var(--font-mono);" />
-                <button class="input-action-btn" type="button" onclick="toggleApiKeyVisibility()" title="${state.showApiKey ? '隐藏 Key' : '显示 Key'}">
+                <button class="input-action-btn" type="button" onclick="toggleApiKeyVisibility()" title="${state.showApiKey ? '隐藏' : '显示'}">
                   ${state.showApiKey ? `
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
                   ` : `
@@ -2903,12 +3025,9 @@
               </div>
             </div>
 
-            <!-- Row 3: 模型名称 (组合下拉框) -->
+            <!-- Row 3: 模型名称 -->
             <div class="setting-row">
-              <div class="setting-label-group" style="min-width: 65px;">
-                <span class="setting-label">模型名称</span>
-                <span class="setting-sublabel" style="font-size: 9.5px;">可选或输入</span>
-              </div>
+              <span class="setting-label" style="min-width: 65px;">模型名称</span>
               <div style="position: relative; width: 100%; max-width: 220px;">
                 <input class="input-box" list="llm-model-options" id="custom-model" placeholder="选择或输入模型" value="${custom.model || ''}" oninput="updateCustomLlmField('model', this.value)" style="height: 28px; font-size: 11px; font-family: var(--font-mono);" />
                 <datalist id="llm-model-options">
@@ -2923,12 +3042,12 @@
               <input class="input-box" type="text" id="custom-base-url" placeholder="https://api.deepseek.com" value="${custom.baseUrl || ''}" oninput="updateCustomLlmField('baseUrl', this.value)" style="height: 28px; font-size: 11px; font-family: var(--font-mono); max-width: 220px;" />
             </div>
 
-            <!-- Row 5: 底部测试连接与状态 -->
-            <div class="setting-row" style="padding: 10px 14px; min-height: 44px; border-bottom: none;">
-              <div id="llm-test-status" style="font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">
-                ${custom.testResult ? custom.testResult : '输入 Key 后点击测试连接'}
+            <!-- Row 5: 测试连接 -->
+            <div class="setting-row" style="padding: 8px 14px; min-height: 40px; border-bottom: none;">
+              <div id="llm-test-status" style="font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;">
+                ${custom.testResult ? custom.testResult : '输入 Key 后可测试连接'}
               </div>
-              <button class="btn btn-primary" id="btn-test-llm" style="height: 26px; padding: 0 14px; font-size: 11.5px; flex-shrink: 0;" onclick="testCustomLlmConnection()">测试连接</button>
+              <button class="btn btn-primary" id="btn-test-llm" style="height: 26px; padding: 0 12px; font-size: 11px; flex-shrink: 0;" onclick="testCustomLlmConnection()">测试连接</button>
             </div>
           </div>
         `;
@@ -2938,41 +3057,272 @@
     // =====================================================================
     // CONTROLLER & EVENT HANDLERS
     // =====================================================================
+    function renderKeypad() {
+      const keypad = document.getElementById('keypad');
+      if (!keypad) return;
+
+      const order = (state.settings?.moduleOrder && state.settings.moduleOrder.length > 0)
+        ? state.settings.moduleOrder
+        : ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+
+      const enabled = (state.settings?.enabledModules && state.settings.enabledModules.length > 0)
+        ? state.settings.enabledModules
+        : ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+
+      const activeModules = order.filter(id => enabled.includes(id));
+      const effectiveModules = activeModules.length > 0 ? activeModules : ['translate'];
+
+      if (state.activeTab !== 'settings' && !effectiveModules.includes(state.activeTab)) {
+        state.activeTab = effectiveModules[0];
+      }
+
+      keypad.style.gridTemplateColumns = `repeat(${effectiveModules.length}, 1fr)`;
+
+      let html = '';
+      effectiveModules.forEach(modId => {
+        const mod = ALL_MODULES.find(m => m.id === modId) || { id: modId, name: modId, desc: '' };
+        const isActive = (state.activeTab === modId);
+        html += `
+          <button class="tactile-key ${isActive ? 'active' : ''}" data-tab="${modId}" onclick="switchTab('${modId}')" title="${mod.name} (${mod.desc})">
+            <span class="led-dot"></span>
+            <span>${mod.name}</span>
+          </button>
+        `;
+      });
+      keypad.innerHTML = html;
+
+      const gearBtn = document.getElementById('gear-btn');
+      if (gearBtn) {
+        if (state.activeTab === 'settings') {
+          gearBtn.classList.add('active');
+        } else {
+          gearBtn.classList.remove('active');
+        }
+      }
+    }
+
     function render() {
+      renderKeypad();
+
       const container = document.getElementById('view-container');
       if (container && Views[state.activeTab]) {
         container.innerHTML = Views[state.activeTab]();
       }
-
-      // Update Top Keypad Buttons Active state
-      document.querySelectorAll('#keypad .tactile-key').forEach(btn => {
-        const tab = btn.getAttribute('data-tab');
-        if (tab === state.activeTab) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-      });
 
       if (state.activeTab === 'fill' && window.updateLineNumbers) {
         setTimeout(window.updateLineNumbers, 0);
       }
     }
 
-    // Keypad tab click binding
-    document.querySelectorAll('#keypad .tactile-key').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (state.isTranslating) return;
-        state.activeTab = btn.getAttribute('data-tab');
-        if (state.activeTab === 'tools') {
-          checkLocalService();
+    window.switchTab = function(tabId) {
+      if (state.isTranslating) return;
+      state.activeTab = tabId;
+      if (state.activeTab === 'tools') {
+        checkLocalService();
+      }
+      if (state.activeTab === 'compress') {
+        refreshCompressQuotas(false);
+      }
+      render();
+    };
+
+    window.toggleSettingsTab = function() {
+      if (state.activeTab === 'settings') {
+        const order = state.settings?.moduleOrder || ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+        const enabled = state.settings?.enabledModules || ['translate'];
+        const activeModules = order.filter(id => enabled.includes(id));
+        state.activeTab = activeModules[0] || 'translate';
+      } else {
+        state.activeTab = 'settings';
+      }
+      render();
+    };
+
+    window.toggleModuleEnabled = function(modId, isChecked) {
+      if (!state.settings.enabledModules) {
+        state.settings.enabledModules = ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      }
+      if (!isChecked) {
+        const remaining = state.settings.enabledModules.filter(id => id !== modId);
+        if (remaining.length === 0) {
+          showToast('⚠️ 至少需要保留一个功能模块', true);
+          render();
+          return;
         }
-        if (state.activeTab === 'compress') {
-          refreshCompressQuotas(false);
+        state.settings.enabledModules = remaining;
+        if (state.activeTab === modId) {
+          state.activeTab = remaining[0];
         }
-        render();
-      });
-    });
+      } else {
+        if (!state.settings.enabledModules.includes(modId)) {
+          state.settings.enabledModules.push(modId);
+        }
+      }
+      savePluginState();
+      render();
+    };
+
+    window.moveModuleOrder = function(modId, direction) {
+      if (!state.settings.moduleOrder) {
+        state.settings.moduleOrder = ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      }
+      const order = [...state.settings.moduleOrder];
+      const idx = order.indexOf(modId);
+      if (idx < 0) return;
+      const targetIdx = idx + direction;
+      if (targetIdx < 0 || targetIdx >= order.length) return;
+
+      const temp = order[idx];
+      order[idx] = order[targetIdx];
+      order[targetIdx] = temp;
+      state.settings.moduleOrder = order;
+
+      savePluginState();
+      render();
+    };
+
+    window.resetAllModules = function() {
+      state.settings.enabledModules = ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      state.settings.moduleOrder = ['translate', 'fill', 'compress', 'color', 'import', 'tools'];
+      savePluginState();
+      render();
+      showToast('✨ 已重置为默认 6 大功能模块！');
+    };
+
+    window.toggleCloudSyncKeyDetails = function() {
+      const box = document.getElementById('cloud-sync-details-box');
+      const txt = document.getElementById('cloud-sync-toggle-text');
+      if (!box) return;
+      if (box.style.display === 'none' || !box.style.display) {
+        box.style.display = 'block';
+        if (txt) txt.textContent = '收起密钥绑定 ▲';
+      } else {
+        box.style.display = 'none';
+        if (txt) txt.textContent = '展开密钥绑定 ▼';
+      }
+    };
+
+    window.saveToCurrentDocument = function() {
+      const payload = {
+        theme: state.theme,
+        enabledModules: state.settings.enabledModules,
+        moduleOrder: state.settings.moduleOrder,
+        docSyncEnabled: true,
+        activeProviderId: state.settings.activeProviderId,
+        customLlm: state.settings.customLlm,
+        providerCredentials: state.settings.providerCredentials,
+        translation: state.settings.translation,
+        fill: state.settings.fill
+      };
+      parent.postMessage({
+        pluginMessage: {
+          type: 'config/save-to-document',
+          payload
+        }
+      }, '*');
+      state.hasDocConfig = true;
+      render();
+    };
+
+    window.loadFromCurrentDocument = function() {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'config/load-from-document',
+          payload: {}
+        }
+      }, '*');
+    };
+
+    window.exportConfigCode = function() {
+      try {
+        const exportData = {
+          v: 1,
+          t: Date.now(),
+          m: state.settings.enabledModules || ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+          o: state.settings.moduleOrder || ['translate', 'fill', 'compress', 'color', 'import', 'tools'],
+          tr: {
+            p: state.pinnedCodes,
+            t: state.targetLanguage,
+            s: state.scenario,
+            pt: state.protectText,
+            pr: state.preserveRichText
+          },
+          fl: {
+            l: state.fillLines,
+            p: state.fillPrefix,
+            s: state.fillSuffix
+          },
+          llm: state.settings.customLlm,
+          pid: state.settings.activeProviderId
+        };
+        const jsonStr = JSON.stringify(exportData);
+        const code = 'VB:' + btoa(unescape(encodeURIComponent(jsonStr)));
+
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const success = document.execCommand('copy');
+        document.body.removeChild(ta);
+
+        if (success) {
+          showToast('📋 配置口令已复制！可在其他电脑一键导入');
+        } else {
+          prompt('请复制以下配置口令：', code);
+        }
+      } catch (e) {
+        showToast('生成配置口令失败: ' + e.message, true);
+      }
+    };
+
+    window.importConfigCode = function() {
+      const code = prompt('请粘贴配置口令 (以 VB: 开头)：');
+      if (!code) return;
+      try {
+        const trimmed = code.trim();
+        let data;
+        if (trimmed.startsWith('VB:')) {
+          const b64 = trimmed.substring(3);
+          const jsonStr = decodeURIComponent(escape(atob(b64)));
+          data = JSON.parse(jsonStr);
+        } else {
+          data = JSON.parse(trimmed);
+        }
+
+        if (data) {
+          if (Array.isArray(data.m) && data.m.length > 0) {
+            state.settings.enabledModules = [...data.m];
+          }
+          if (Array.isArray(data.o) && data.o.length > 0) {
+            state.settings.moduleOrder = [...data.o];
+          }
+          if (data.tr) {
+            if (data.tr.p) state.pinnedCodes = [...data.tr.p];
+            if (data.tr.t) state.targetLanguage = data.tr.t;
+            if (data.tr.s) state.scenario = data.tr.s;
+            if (typeof data.tr.pt === 'boolean') state.protectText = data.tr.pt;
+            if (typeof data.tr.pr === 'boolean') state.preserveRichText = data.tr.pr;
+          }
+          if (data.fl) {
+            if (data.fl.l) state.fillLines = [...data.fl.l];
+            if (data.fl.p !== undefined) state.fillPrefix = data.fl.p;
+            if (data.fl.s !== undefined) state.fillSuffix = data.fl.s;
+          }
+          if (data.llm) state.settings.customLlm = data.llm;
+          if (data.pid) state.settings.activeProviderId = data.pid;
+
+          savePluginState();
+          render();
+          showToast('🎉 配置口令导入成功！模块与偏好已恢复');
+        } else {
+          showToast('⚠️ 未能识别有效的配置数据', true);
+        }
+      } catch (e) {
+        showToast('⚠️ 口令解析失败，请检查是否完整', true);
+      }
+    };
 
     // Batch Image Import methods
     window.handleImportDragOver = function(e) {
@@ -3390,14 +3740,6 @@ echo "=========================================="
       savePluginState();
       render();
     };
-    window.toggleSimplifyText = function(checked) {
-      state.simplifyText = typeof checked === 'boolean' ? checked : !state.simplifyText;
-      state.compactUiWidth = state.simplifyText;
-      savePluginState();
-      render();
-    };
-    window.toggleCompactUiWidth = window.toggleSimplifyText;
-
     window.toggleProtectText = function(checked) {
       state.protectText = typeof checked === 'boolean' ? checked : !state.protectText;
       savePluginState();
@@ -3410,6 +3752,18 @@ echo "=========================================="
     };
     window.toggleSmartCasing = function(checked) {
       state.smartCasing = typeof checked === 'boolean' ? checked : !state.smartCasing;
+      savePluginState();
+      render();
+    };
+    window.toggleSimplifyText = function(checked) {
+      state.simplifyText = typeof checked === 'boolean' ? checked : !state.simplifyText;
+      state.compactUiWidth = state.simplifyText;
+      savePluginState();
+      render();
+    };
+    window.toggleCompactUiWidth = window.toggleSimplifyText;
+    window.setTranslationScenario = function(scId) {
+      state.scenario = scId;
       savePluginState();
       render();
     };
@@ -3426,6 +3780,7 @@ echo "=========================================="
               targetLanguage: state.targetLanguage,
               protectText: state.protectText,
               preserveRichText: state.preserveRichText,
+              scenario: state.scenario,
               simplifyText: state.simplifyText !== false,
               compactUiWidth: state.simplifyText !== false
             }
@@ -3436,6 +3791,7 @@ echo "=========================================="
           pluginMessage: {
             type: 'translation/frame-start',
             payload: {
+              scenario: state.scenario,
               simplifyText: state.simplifyText !== false,
               compactUiWidth: state.simplifyText !== false
             }
@@ -3543,6 +3899,11 @@ echo "=========================================="
       fillSaveDebounce = setTimeout(() => {
         savePluginState();
       }, 500);
+    };
+
+    window.escapeHtml = function(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
     };
 
     window.showToast = function(msg, isError = false) {
@@ -4396,6 +4757,36 @@ echo "=========================================="
     // =====================================================================
     // ACCOUNT & CLOUD SYNC ACTIONS
     // =====================================================================
+    window.toggleAccountSync = function(enabled) {
+      if (!state.settings) state.settings = {};
+      state.settings.accountSync = state.settings.accountSync || {};
+      state.settings.accountSync.enabled = enabled;
+      state.accountSyncStatus = enabled ? 'syncing' : 'disabled';
+      parent.postMessage({
+        pluginMessage: {
+          type: 'account/toggle-sync',
+          payload: { enabled }
+        }
+      }, '*');
+      render();
+    };
+
+    window.manualTriggerAccountSync = function() {
+      const btn = document.getElementById('btn-manual-sync');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '同步中...';
+      }
+      state.accountSyncStatus = 'syncing';
+      const ind = document.getElementById('account-sync-text');
+      if (ind) ind.textContent = '正在同步...';
+      parent.postMessage({
+        pluginMessage: {
+          type: 'account/manual-sync'
+        }
+      }, '*');
+    };
+
     window.bindSyncKey = function() {
       const input = document.getElementById('input-sync-key');
       const val = (input ? input.value : '').trim();
@@ -4871,6 +5262,283 @@ echo "=========================================="
         }
 
         return result;
+      }
+    };
+
+    // Scenario-Aware Glossary & Terminology Calibration Engine
+    const ScenarioGlossary = {
+      rules: {
+        ecommerce: {
+          'zh': {
+            'save': '立省',
+            'save more': '省更多',
+            'order': '立即下单',
+            'orders': '我的订单',
+            'order now': '立即下单',
+            'place order': '提交订单',
+            'free': '包邮',
+            'free shipping': '全场包邮',
+            'free delivery': '免费配送',
+            'cart': '购物车',
+            'add to cart': '加入购物车',
+            'checkout': '去结算',
+            'in stock': '现货有售',
+            'out of stock': '已售罄',
+            'buy now': '立即购买',
+            'apply': '立即使用',
+            'apply coupon': '使用优惠券',
+            'coupon': '优惠券',
+            'voucher': '代金券',
+            'subtotal': '商品小计',
+            'total': '合计实付',
+            'item': '件商品',
+            'items': '件商品',
+            'sku': '规格/款式',
+            'sold out': '已售罄',
+            'discount': '限时折扣',
+            'off': '折'
+          },
+          'en': {
+            '立省': 'Save',
+            '省': 'Save',
+            '立即下单': 'Order Now',
+            '下单': 'Place Order',
+            '购物车': 'Cart',
+            '加购': 'Add to Cart',
+            '加入购物车': 'Add to Cart',
+            '去结算': 'Checkout',
+            '结算': 'Checkout',
+            '包邮': 'Free Shipping',
+            '实付': 'Total',
+            '合计': 'Total',
+            '已售罄': 'Sold Out',
+            '优惠券': 'Coupon',
+            '规格': 'SKU',
+            '现货': 'In Stock'
+          },
+          badTranslations: {
+            'zh': [
+              { from: '保存', to: '立省', whenSource: /^(?:save|save\s*more|save\s*now)$/i },
+              { from: '自由', to: '包邮', whenSource: /^(?:free|free\s*shipping)$/i },
+              { from: '命令', to: '订单', whenSource: /^(?:order|orders)$/i },
+              { from: '排序', to: '立即下单', whenSource: /^(?:order\s*now|place\s*order)$/i }
+            ]
+          }
+        },
+
+        saas: {
+          'zh': {
+            'save': '保存',
+            'save changes': '保存更改',
+            'order': '排序',
+            'free': '免费版',
+            'log': '日志',
+            'logs': '系统日志',
+            'audit': '审计',
+            'audit log': '审计日志',
+            'workspace': '工作区',
+            'workspaces': '工作区列表',
+            'console': '控制台',
+            'dashboard': '数据看板',
+            'billing': '账单与订阅',
+            'role': '角色权限',
+            'roles': '角色列表',
+            'permission': '权限配置',
+            'permissions': '权限列表',
+            'deploy': '部署发布',
+            'deployment': '部署管理',
+            'instance': '实例',
+            'instances': '实例列表',
+            'cluster': '集群',
+            'endpoint': '接口地址',
+            'quota': '配额用量',
+            'metric': '指标监控',
+            'analytics': '数据分析',
+            'workflow': '工作流'
+          },
+          'en': {
+            '保存': 'Save',
+            '工作区': 'Workspace',
+            '控制台': 'Console',
+            '看板': 'Dashboard',
+            '日志': 'Logs',
+            '审计': 'Audit',
+            '账单': 'Billing',
+            '配额': 'Quota',
+            '实例': 'Instances',
+            '角色': 'Roles'
+          },
+          badTranslations: {
+            'zh': [
+              { from: '原木', to: '日志', whenSource: /^(?:log|logs)$/i },
+              { from: '立省', to: '保存', whenSource: /^(?:save|save\s*changes)$/i }
+            ]
+          }
+        },
+
+        social: {
+          'zh': {
+            'feed': '动态流',
+            'feeds': '动态列表',
+            'post': '发布动态',
+            'posts': '全部帖子',
+            'story': '快拍',
+            'stories': '精选快拍',
+            'follow': '关注',
+            'following': '已关注',
+            'follower': '粉丝',
+            'followers': '粉丝列表',
+            'message': '私信',
+            'messages': '消息列表',
+            'direct message': '私信',
+            'inbox': '收件箱',
+            'share': '分享',
+            'like': '点赞',
+            'likes': '获赞',
+            'comment': '发表评论',
+            'comments': '评论列表',
+            'moment': '瞬间/朋友圈',
+            'subscribe': '订阅频道'
+          },
+          'en': {
+            '动态': 'Feed',
+            '发帖': 'Post',
+            '发动态': 'Post',
+            '快拍': 'Story',
+            '关注': 'Follow',
+            '已关注': 'Following',
+            '粉丝': 'Followers',
+            '私信': 'Message',
+            '点赞': 'Like',
+            '获赞': 'Likes'
+          }
+        },
+
+        fintech: {
+          'zh': {
+            'wallet': '钱包资产',
+            'deposit': '充币/充值',
+            'withdraw': '提币/提现',
+            'transfer': '转账',
+            'stake': '质押生息',
+            'staking': '质押挖矿',
+            'unstake': '赎回质押',
+            'swap': '闪兑/交易',
+            'slippage': '滑点容忍度',
+            'gas': '网络Gas费',
+            'gas fee': '网络矿工费',
+            'balance': '可用余额',
+            'available balance': '可用余额',
+            'portfolio': '投资组合',
+            'yield': '收益率',
+            'apr': '年化利率 (APR)',
+            'apy': '年化复合收益率 (APY)',
+            'tx': '交易记录',
+            'hash': '交易哈希'
+          },
+          'en': {
+            '钱包': 'Wallet',
+            '充币': 'Deposit',
+            '充值': 'Deposit',
+            '提币': 'Withdraw',
+            '提现': 'Withdraw',
+            '质押': 'Stake',
+            '赎回': 'Unstake',
+            '闪兑': 'Swap',
+            '滑点': 'Slippage',
+            '余额': 'Balance',
+            '年化': 'APY'
+          },
+          badTranslations: {
+            'zh': [
+              { from: '赌注', to: '质押', whenSource: /^(?:stake|staking)$/i },
+              { from: '股份', to: '质押', whenSource: /^(?:stake|staking)$/i }
+            ]
+          }
+        },
+
+        gaming: {
+          'zh': {
+            'quest': '主线任务',
+            'quests': '任务列表',
+            'mission': '挑战目标',
+            'inventory': '背包道具',
+            'hero': '出战英雄',
+            'heroes': '英雄名录',
+            'equip': '穿戴装备',
+            'equipment': '角色装备',
+            'weapon': '神兵武器',
+            'rank': '段位军衔',
+            'leaderboard': '全服排行榜',
+            'guild': '战队公会',
+            'pvp': '巅峰竞技场',
+            'pve': '副本冒险',
+            'dungeon': '秘境副本',
+            'stage': '关卡战役',
+            'energy': '体力耐力',
+            'stamina': '行动点/体力',
+            'reward': '领取奖励',
+            'claim': '一键领取',
+            'level': '等级'
+          },
+          'en': {
+            '任务': 'Quest',
+            '背包': 'Inventory',
+            '装备': 'Equip',
+            '段位': 'Rank',
+            '排行榜': 'Leaderboard',
+            '公会': 'Guild',
+            '副本': 'Dungeon',
+            '体力': 'Stamina',
+            '领取': 'Claim'
+          },
+          badTranslations: {
+            'zh': [
+              { from: '追求', to: '任务', whenSource: /^(?:quest|quests)$/i },
+              { from: '探索', to: '任务', whenSource: /^(?:quest|quests)$/i }
+            ]
+          }
+        },
+
+        general: {
+          'zh': {},
+          'en': {}
+        }
+      },
+
+      calibrate(origText, translatedText, targetLang, scenario = 'general') {
+        if (!origText || !translatedText || !scenario || scenario === 'auto') return translatedText;
+        const scMap = this.rules[scenario];
+        if (!scMap) return translatedText;
+
+        const hasTags = /<\s*\/?\s*(?:s|span)\b/i.test(translatedText) || /<\/?\d+>/.test(translatedText);
+        const cleanOrig = origText.replace(/<[^>]+>/g, '').trim();
+        const lowerOrig = cleanOrig.toLowerCase();
+        const langFamily = (targetLang || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+
+        // 1. Direct exact vocabulary match (only if translatedText does not contain rich tags)
+        if (!hasTags) {
+          const dict = scMap[langFamily];
+          if (dict && dict[lowerOrig]) {
+            const matched = dict[lowerOrig];
+            const trailingPunct = cleanOrig.match(/([:：!！?？.。,，\s]+)$/);
+            return matched + (trailingPunct ? trailingPunct[1] : '');
+          }
+        }
+
+        // 2. Bad translation fixup (e.g. Google MT mapped 'Save' -> '保存' in E-commerce, or 'Log' -> '原木' in SaaS)
+        if (scMap.badTranslations && scMap.badTranslations[langFamily]) {
+          const fixes = scMap.badTranslations[langFamily];
+          for (const fix of fixes) {
+            if (fix.whenSource && fix.whenSource.test(cleanOrig)) {
+              if (translatedText.includes(fix.from)) {
+                return translatedText.replace(new RegExp(fix.from, 'g'), fix.to);
+              }
+            }
+          }
+        }
+
+        return translatedText;
       }
     };
 
@@ -5484,6 +6152,46 @@ echo "=========================================="
         return new Promise(r => setTimeout(r, ms));
       },
 
+      getScenarioPrompt(scenario) {
+        switch (scenario) {
+          case 'ecommerce':
+            return `Domain Context: Cross-Border E-Commerce & Retail.
+Crucial terminology constraints:
+- "Save": translate to discount/savings like "立省" or "省", NOT "保存".
+- "Order": translate to "立即下单", "提交订单" or "订单", NOT "排序".
+- "Free": translate to "包邮" or "免运费" (in shopping context) or "免费".
+- "Cart": "购物车", "Checkout": "去结算/结算", "Apply": "使用/应用(优惠券)", "SKU": "规格/型号", "In Stock": "现货有售".`;
+
+          case 'saas':
+            return `Domain Context: Enterprise SaaS, B2B Cloud Console & Management Workspaces.
+Crucial terminology constraints:
+- "Save": translate to "保存" (saving settings/changes).
+- "Order": translate to "排序" or "序号", NOT "下单".
+- "Log": translate to "日志" or "审计日志", NOT "原木".
+- "Workspace": "工作区", "Role": "角色", "Permission": "权限", "Console": "控制台", "Dashboard": "看板", "Deploy": "部署发布".`;
+
+          case 'social':
+            return `Domain Context: Social Media, Feeds & Content Community.
+Crucial terminology constraints:
+- "Feed": "动态" or "信息流", "Post": "发帖/发布/动态", "Story": "快拍/故事", "Follow": "关注", "Followers": "粉丝", "DM/Message": "私信", "Like": "点赞".`;
+
+          case 'fintech':
+            return `Domain Context: FinTech, Web3, DeFi & Asset Management.
+Crucial terminology constraints:
+- "Stake/Staking": translate to "质押" or "质押生息", NOT "赌注/股份".
+- "Deposit": "充币/充值", "Withdraw": "提币/提现", "Swap": "闪兑/兑换", "Slippage": "滑点", "Wallet": "钱包", "APR/APY": "年化收益率".`;
+
+          case 'gaming':
+            return `Domain Context: Gaming & Entertainment.
+Crucial terminology constraints:
+- "Quest": "任务" or "关卡任务", "Inventory": "背包/物品栏", "Equip": "装备/穿戴", "Rank": "段位/排位", "Guild": "公会", "Dungeon": "秘境/副本".`;
+
+          case 'general':
+          default:
+            return `Domain Context: General UI/UX. Keep all translations ultra-concise and punchy, avoiding wordiness to prevent UI element overflow.`;
+        }
+      },
+
       getSimplificationPrompt(simplifyText) {
         if (simplifyText === false) return '';
         return `CRITICAL UI MICROCOPY EXTREME SIMPLIFICATION DIRECTIVE (文案极简化后处理与防爆框):
@@ -5573,7 +6281,7 @@ echo "=========================================="
       },
 
       // LLM Provider: DeepSeek, OpenAI, Kimi, SiliconFlow, Zhipu, etc.
-      async llmTranslateBatch(texts, targetLang, customConfig) {
+      async llmTranslateBatch(texts, targetLang, customConfig, scenario = 'general', simplifyText = true) {
         if (!customConfig?.apiKey || texts.length === 0) return new Map();
         const cleanBase = (customConfig.baseUrl || 'https://api.deepseek.com').replace(/\/+$/, '');
         const url = cleanBase.endsWith('/chat/completions') ? cleanBase : `${cleanBase}/chat/completions`;
@@ -5593,7 +6301,9 @@ echo "=========================================="
               messages: [
                 {
                   role: 'system',
-                  content: `You are an expert UI/UX localization translator. Translate each numbered item to "${targetLang}".
+                  content: `You are an expert UI/UX localization translator for mobile interfaces. Translate each numbered item to "${targetLang}".
+${this.getScenarioPrompt(scenario)}
+${this.getSimplificationPrompt(simplifyText)}
 Strict formatting and tag integrity rules:
 1. Preserve all markup tags like <s id="0">...</s> or <span id="0">...</span> around their corresponding translated words without modifying id values or tag structure.
 2. Preserve placeholders like {0}, {name}, %s, $1, #hashtag intact.
@@ -5647,7 +6357,7 @@ Strict formatting and tag integrity rules:
         return 'auto';
       },
 
-      async translateSingle(text, targetLang, simplifyText = true) {
+      async translateSingle(text, targetLang, scenario = 'general', simplifyText = true) {
         const trimmed = (text || '').trim();
         if (!trimmed) return text;
 
@@ -5656,7 +6366,7 @@ Strict formatting and tag integrity rules:
         }
 
         // Check LRU cache
-        const cacheKey = `${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${trimmed}`;
+        const cacheKey = `${scenario}:${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${trimmed}`;
         const cached = this.cache.get(cacheKey);
         if (cached) return cached;
 
@@ -5693,6 +6403,9 @@ Strict formatting and tag integrity rules:
         let result = await TranslationProviders.googleTranslate(queryText, targetLang);
         if (result && result !== trimmed) {
           result = TagShieldingEngine.repairTags(result);
+          if (scenario && scenario !== 'general') {
+            result = ScenarioGlossary.calibrate(trimmed, result, targetLang, scenario);
+          }
           if (simplifyText !== false) {
             result = TextSimplificationEngine.simplify(trimmed, result, targetLang);
           }
@@ -5706,7 +6419,7 @@ Strict formatting and tag integrity rules:
         return trimmed;
       },
 
-      async translateBatch(texts, targetLang, customConfig, onProgress = null, simplifyText = true) {
+      async translateBatch(texts, targetLang, customConfig, onProgress = null, scenario = 'general', simplifyText = true) {
         const uniqueTexts = Array.from(new Set(texts.map(t => (t || '').trim()).filter(Boolean)));
         const resultMap = new Map();
 
@@ -5717,7 +6430,7 @@ Strict formatting and tag integrity rules:
             resultMap.set(t, t);
             continue;
           }
-          const cacheKey = `${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${t}`;
+          const cacheKey = `${scenario}:${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${t}`;
           const cached = this.cache.get(cacheKey);
           if (cached) {
             resultMap.set(t, cached);
@@ -5752,11 +6465,11 @@ Strict formatting and tag integrity rules:
 
         // 2. Custom LLM path (if configured)
         if (customConfig?.apiKey && toTranslate.length > 0) {
-          const llmResults = await TranslationProviders.llmTranslateBatch(toTranslate, targetLang, customConfig);
+          const llmResults = await TranslationProviders.llmTranslateBatch(toTranslate, targetLang, customConfig, scenario, simplifyText);
           for (const [orig, trans] of llmResults.entries()) {
             if (trans && trans !== orig) {
               resultMap.set(orig, trans);
-              this.cache.set(`${targetLang}:${orig}`, trans);
+              this.cache.set(`${scenario}:${simplifyText !== false ? 's1' : 's0'}:${targetLang}:${orig}`, trans);
             }
           }
         }
@@ -5769,7 +6482,7 @@ Strict formatting and tag integrity rules:
             const chunk = pending.slice(i, i + CONCURRENCY);
             await Promise.all(
               chunk.map(async (text) => {
-                const trans = await this.translateSingle(text, targetLang, simplifyText);
+                const trans = await this.translateSingle(text, targetLang, scenario, simplifyText);
                 resultMap.set(text, trans);
                 completedCount++;
                 if (onProgress) onProgress(completedCount, totalCount);
@@ -5778,11 +6491,16 @@ Strict formatting and tag integrity rules:
           }
         }
 
-        // 4. Post-processing: Normalize tags & Apply Smart Casing to all results
+        // 4. Post-processing: Normalize tags, apply ScenarioGlossary calibration, TextSimplificationEngine & Smart Casing to all results
         for (const [key, val] of resultMap.entries()) {
           if (val) {
             let processed = TagShieldingEngine.repairTags(val);
-            if (simplifyText !== false) processed = TextSimplificationEngine.simplify(key, processed, targetLang);
+            if (scenario && scenario !== 'general') {
+              processed = ScenarioGlossary.calibrate(key, processed, targetLang, scenario);
+            }
+            if (simplifyText !== false) {
+              processed = TextSimplificationEngine.simplify(key, processed, targetLang);
+            }
             if (state.smartCasing !== false) {
               processed = SmartCasingEngine.format(processed, targetLang);
             }
@@ -5806,10 +6524,21 @@ Strict formatting and tag integrity rules:
       'app/initialized'(payload) {
         if (payload?.settings) {
           state.settings = payload.settings;
+          if (Array.isArray(state.settings.enabledModules) && !state.settings.enabledModules.includes('import')) {
+            const idx = state.settings.enabledModules.indexOf('tools');
+            if (idx !== -1) state.settings.enabledModules.splice(idx, 0, 'import');
+            else state.settings.enabledModules.push('import');
+          }
+          if (Array.isArray(state.settings.moduleOrder) && !state.settings.moduleOrder.includes('import')) {
+            const idx = state.settings.moduleOrder.indexOf('tools');
+            if (idx !== -1) state.settings.moduleOrder.splice(idx, 0, 'import');
+            else state.settings.moduleOrder.push('import');
+          }
           const tr = state.settings.translation;
           if (tr?.pinnedLanguageCodes?.length > 0) state.pinnedCodes = [...tr.pinnedLanguageCodes];
           if (tr?.targetLanguage) state.targetLanguage = tr.targetLanguage;
           if (tr?.translateMode) state.translateMode = tr.translateMode;
+          if (tr?.scenario) state.scenario = tr.scenario;
           if (typeof tr?.simplifyText === 'boolean') state.simplifyText = tr.simplifyText;
           else if (typeof tr?.compactUiWidth === 'boolean') state.simplifyText = tr.compactUiWidth;
           state.compactUiWidth = state.simplifyText;
@@ -5828,8 +6557,21 @@ Strict formatting and tag integrity rules:
             setTimeout(() => refreshCompressQuotas(false), 200);
           }
         }
+        if (payload?.currentUser) {
+          state.currentUser = payload.currentUser;
+        }
+        if (payload?.hasDocConfig !== undefined) {
+          state.hasDocConfig = payload.hasDocConfig;
+        }
         if (payload?.selection) state.selection = payload.selection;
         render();
+      },
+
+      'config/document-status'(payload) {
+        if (payload?.hasDocConfig !== undefined) {
+          state.hasDocConfig = payload.hasDocConfig;
+          render();
+        }
       },
 
       'selection/changed'(payload) {
@@ -5842,8 +6584,9 @@ Strict formatting and tag integrity rules:
       },
 
       async 'translation/do-translate'(payload, requestId) {
-        const { targetLanguage, nodeTexts, preserveRichText } = payload;
+        const { targetLanguage, nodeTexts, preserveRichText, scenario = 'auto', detectedScenario = 'general' } = payload;
         const simplifyText = (payload.simplifyText !== undefined ? payload.simplifyText : (payload.compactUiWidth !== undefined ? payload.compactUiWidth : (state.simplifyText !== false)));
+        const effectiveScenario = (scenario === 'auto' || !scenario) ? (detectedScenario || 'general') : scenario;
         const isCustom = state.settings?.activeProviderId === 'custom-llm' || state.settings?.activeProviderId === 'deepseek';
         const customConfig = isCustom ? (state.settings?.customLlm || state.settings?.providerCredentials?.deepseek) : null;
         
@@ -5857,7 +6600,7 @@ Strict formatting and tag integrity rules:
             }
           };
 
-          const resultMap = await TranslationPipeline.translateBatch(rawTexts, targetLanguage, customConfig, onProgress, simplifyText);
+          const resultMap = await TranslationPipeline.translateBatch(rawTexts, targetLanguage, customConfig, onProgress, effectiveScenario, simplifyText);
           const results = nodeTexts.map(n => {
             const origTrimmed = (n.text || '').trim();
             if (state.protectText !== false && DataProtectionEngine.isProtected(origTrimmed)) {
@@ -5896,8 +6639,9 @@ Strict formatting and tag integrity rules:
       },
 
       async 'translation/do-scheme-translate'(payload, requestId) {
-        const { batches, preserveRichText } = payload;
+        const { batches, preserveRichText, scenario = 'auto', detectedScenario = 'general' } = payload;
         const simplifyText = (payload.simplifyText !== undefined ? payload.simplifyText : (payload.compactUiWidth !== undefined ? payload.compactUiWidth : (state.simplifyText !== false)));
+        const effectiveScenario = (scenario === 'auto' || !scenario) ? (detectedScenario || 'general') : scenario;
         const isCustom = state.settings?.activeProviderId === 'custom-llm' || state.settings?.activeProviderId === 'deepseek';
         const customConfig = isCustom ? (state.settings?.customLlm || state.settings?.providerCredentials?.deepseek) : null;
         
@@ -5917,14 +6661,14 @@ Strict formatting and tag integrity rules:
               }
             };
 
-            const resultMap = await TranslationPipeline.translateBatch(rawTexts, batch.targetLanguage, customConfig, onProgress, simplifyText);
+            const resultMap = await TranslationPipeline.translateBatch(rawTexts, batch.targetLanguage, customConfig, onProgress, effectiveScenario, simplifyText);
             const results = batch.nodeTexts.map(n => {
               const origTrimmed = (n.text || '').trim();
               if (state.protectText !== false && DataProtectionEngine.isProtected(origTrimmed)) {
                 return { id: n.id, translated: n.text, richStyles: n.richStyles };
               }
               let trans = resultMap.get(origTrimmed) || n.text;
-              if (trans) {
+              if (simplifyText !== false && trans) {
                 trans = TextSimplificationEngine.simplify(origTrimmed, trans, batch.targetLanguage);
               }
               if (state.smartCasing !== false && trans) {
@@ -6465,7 +7209,7 @@ Strict formatting and tag integrity rules:
       },
 
       'account/sync-status-updated'(payload) {
-        const { success, settings, cloudSync, message, error } = payload || {};
+        const { success, settings, cloudSync, lastSyncTime, status, message, error } = payload || {};
         if (success) {
           if (settings) {
             state.settings = settings;
@@ -6473,6 +7217,8 @@ Strict formatting and tag integrity rules:
             if (tr?.pinnedLanguageCodes?.length > 0) state.pinnedCodes = [...tr.pinnedLanguageCodes];
             if (tr?.targetLanguage) state.targetLanguage = tr.targetLanguage;
             if (tr?.translateMode) state.translateMode = tr.translateMode;
+            if (tr?.scenario) state.scenario = tr.scenario;
+            if (typeof tr?.compactUiWidth === 'boolean') state.compactUiWidth = tr.compactUiWidth;
             if (typeof tr?.protectText === 'boolean') state.protectText = tr.protectText;
             if (typeof tr?.preserveRichText === 'boolean') state.preserveRichText = tr.preserveRichText;
             if (typeof tr?.smartCasing === 'boolean') state.smartCasing = tr.smartCasing;
@@ -6484,8 +7230,21 @@ Strict formatting and tag integrity rules:
             if (!state.settings) state.settings = {};
             state.settings.cloudSync = cloudSync;
           }
+          if (lastSyncTime) {
+            if (!state.settings) state.settings = {};
+            if (!state.settings.accountSync) state.settings.accountSync = {};
+            state.settings.accountSync.lastSyncTime = lastSyncTime;
+          }
+          state.accountSyncStatus = status || 'synced';
+          if (message) {
+            showToast(message);
+          }
           render();
         } else {
+          state.accountSyncStatus = 'error';
+          if (error) {
+            showToast(error, true);
+          }
           render();
         }
       },

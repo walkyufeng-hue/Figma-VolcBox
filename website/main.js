@@ -266,6 +266,49 @@ const MockupViews = {
     `;
   },
 
+  import() {
+    return `
+      <div class="mockup-section-header" style="padding-top: 2px;">
+        <span class="mockup-section-title">本地图片批量导入</span>
+        <span class="mockup-section-hint">自适应网格排版</span>
+      </div>
+
+      <div class="mockup-setting-group" style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="border: 2px dashed var(--border-deck); border-radius: 8px; padding: 18px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: var(--bg-hover);">
+          <div style="font-size: 20px;">📥</div>
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-main);">点击选择或拖拽图片至此处</span>
+          <span style="font-size: 9.5px; color: var(--text-muted);">PNG · JPG · SVG · WebP · 保留原文件名</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 2px;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <label style="font-size: 9.5px; color: var(--text-sub);">每行数量</label>
+            <input class="mockup-input-box" value="5" style="height: 24px; text-align: center; font-size: 11px;" readonly />
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <label style="font-size: 9.5px; color: var(--text-sub);">横向间距 (px)</label>
+            <input class="mockup-input-box" value="24" style="height: 24px; text-align: center; font-size: 11px;" readonly />
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <label style="font-size: 9.5px; color: var(--text-sub);">纵向间距 (px)</label>
+            <input class="mockup-input-box" value="24" style="height: 24px; text-align: center; font-size: 11px;" readonly />
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 6px; border-top: 1px dashed var(--border-deck);">
+          <span style="font-size: 11px; font-weight: 500;">去除文件扩展名</span>
+          <div style="width: 32px; height: 18px; border-radius: 9px; background: var(--accent-red); position: relative; cursor: pointer;">
+            <div style="width: 14px; height: 14px; border-radius: 50%; background: #FFF; position: absolute; right: 2px; top: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);"></div>
+          </div>
+        </div>
+
+        <button class="mockup-btn-primary" style="height: 28px; font-size: 11px; margin-top: 2px;">
+          🚀 批量导入并排列
+        </button>
+      </div>
+    `;
+  },
+
   tools() {
     return `
       <div class="mockup-section-header" style="padding-top: 2px;">
@@ -285,12 +328,12 @@ const MockupViews = {
 
       <div class="mockup-setting-group">
         <div class="mockup-setting-row">
-          <span style="font-size: 11.5px; font-weight: 500;">本地图片批量导入（保留原名）</span>
-          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">导入</button>
-        </div>
-        <div class="mockup-setting-row">
           <span style="font-size: 11.5px; font-weight: 500;">画布生成拼图（带标题）</span>
           <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">生成</button>
+        </div>
+        <div class="mockup-setting-row">
+          <span style="font-size: 11.5px; font-weight: 500;">批量导出所选画板</span>
+          <button class="mockup-btn-primary" style="height: 24px; padding: 0 10px; font-size: 10.5px;">复制</button>
         </div>
         <div class="mockup-setting-row">
           <span style="font-size: 11.5px; font-weight: 500;">文本固定行高转auto</span>

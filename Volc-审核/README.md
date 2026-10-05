@@ -23,20 +23,22 @@
 
 #### 🇨🇳 中文版：
 ```text
-【v1.1.2 更新动态】
-外部粘贴智能识别自动换行：
-1. 外部数据智能识别换行：从 Excel、Google Sheets、网页表格横向复制多项数据粘贴后，自动识别制表符（Tab）与多空格并自动分行，解决挤在单行无法按图层填充的痛点。
-2. 新增「智能分行」按钮：输入框右上角增加快捷整理按钮，已有或已粘贴的横排数据一键瞬间重新分行规整。
-3. 多分隔符与数值防护：全面兼容顿号、逗号、分号与 JSON 数组，智能保护价格千分位数字不被误切，支持 ⌘+Z 撤回。
+【v1.1.3 更新动态】
+工作台模块自选与自由排序、独立图片导入页签及多端配置云同步：
+1. 工作台模块自由启闭与排序：在设置中支持自由开启/关闭 6 大核心模块（翻译、填充、压缩、调色、导入、小工具）并上下移动自定义顺序，未勾选模块自动隐藏，千人千面。
+2. 独立「导入」一级页签：将「本地图片批量导入」从小工具独立为专属一级导航，具备宽适的拖拽区、行列/间距自适应微调、智能去除文件扩展名开关与进度指示，素材批量上板快准稳。
+3. 三维配置持久化方案：支持绑定当前 Figma 文档、账号云端自动备份同步（自动绑定 Figma 账号 / 手动密钥）、以及快速导入导出配置代码，配置永不丢失。
+4. 极简界面与交互优化：精简设置面板顶部多余的返回按钮，优化排序微调按钮视觉，修复用户权限安全提示。
 ```
 
 #### 🇺🇸 English Version (for Figma Reviewers):
 ```text
-[What's New in v1.1.2]
-Smart Format Recognition & Auto-Wrapping for External Data:
-1. Auto-Parse on Paste: Automatically detects tabs and multi-spaces from Excel, Google Sheets, or web tables, converting horizontal rows into clean vertical lines for seamless layer filling.
-2. 1-Click Format Button: Added a "Smart Wrap" button in the editor toolbar to instantly reformat already-pasted text into separate lines.
-3. Multi-Delimiter & Numeric Safety: Supports commas, semicolons, JSON arrays, and numbered lists while protecting comma-formatted numbers (e.g., 1,000,000) from accidental splits. Full ⌘+Z undo support.
+[What's New in v1.1.3]
+Customizable Workspace Modules, Dedicated Image Importer, and Multi-Cloud Config Sync:
+1. Workspace Customization & Reordering: Easily toggle any of the 6 core modules (Translate, Fill, Compress, Palette, Import, Tools) and customize tab ordering. Inactive modules are cleanly hidden from the keypad.
+2. Dedicated Batch Image Importer: Extracted into a dedicated top-level tab with an ergonomic drag-and-drop area, customizable grid rows/columns/spacing, and smart file extension stripping.
+3. 3-Way Config Persistence: Synchronize presets across Figma document roots, cloud key sync, and export/import config codes.
+4. Minimalist UI & Refinements: Removed redundant back buttons, refined module reordering controls, and resolved user permission edge cases.
 ```
 
 ---
