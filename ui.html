@@ -694,16 +694,27 @@
       position: relative;
     }
     .line-numbers {
-      width: 26px;
-      padding: 6px 4px;
+      min-width: 28px;
+      width: 28px;
+      padding: 6px 6px 6px 2px;
       background-color: var(--bg-muted);
       border-right: 1px solid var(--border-deck);
       color: var(--text-muted);
       font-family: var(--font-mono);
       font-size: 11px;
-      line-height: 1.5;
+      line-height: 18px;
       text-align: right;
       overflow: hidden;
+      user-select: none;
+      pointer-events: none;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .line-numbers div {
+      height: 18px;
+      line-height: 18px;
+      box-sizing: border-box;
     }
     .editor-textarea {
       flex: 1;
@@ -711,7 +722,7 @@
       padding: 6px 72px 6px 8px;
       font-family: var(--font-mono);
       font-size: 11px;
-      line-height: 1.5;
+      line-height: 18px;
       color: var(--text-main);
       background: transparent;
       outline: none;
@@ -721,6 +732,7 @@
       white-space: pre-wrap;
       word-break: break-all;
       overflow-wrap: break-word;
+      box-sizing: border-box;
     }
     .editor-format-btn {
       position: absolute;
@@ -1507,7 +1519,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
-      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.3</span></div>
+      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.4</span></div>
     </footer>
   </div>
 
@@ -3867,24 +3879,35 @@ echo "=========================================="
       if (!textarea || !lineNumbersEl) return;
 
       const lines = textarea.value.split('\n');
-      
+
+      // 动态适配行号宽度（如 100+ 行时自动拓宽，避免数字被裁剪）
+      const maxDigits = String(lines.length).length;
+      const neededWidth = Math.max(28, maxDigits >= 3 ? (maxDigits * 7.5 + 10) : 28);
+      lineNumbersEl.style.width = neededWidth + 'px';
+
       let measureDiv = document.getElementById('fill-measure-div');
       if (!measureDiv) {
         measureDiv = document.createElement('div');
         measureDiv.id = 'fill-measure-div';
-        measureDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; box-sizing: border-box;';
+        measureDiv.style.cssText = 'position: absolute; left: -9999px; top: -9999px; visibility: hidden; pointer-events: none; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; font-family: var(--font-mono); font-size: 11px; line-height: 18px; box-sizing: border-box;';
         document.body.appendChild(measureDiv);
+      } else {
+        measureDiv.style.lineHeight = '18px';
       }
 
       const paddingX = 80; // 8px left + 72px right for format button
-      const targetWidth = Math.max(20, textarea.clientWidth - paddingX);
+      const clientW = textarea.clientWidth || textarea.offsetWidth || 260;
+      const targetWidth = Math.max(60, clientW - paddingX);
       measureDiv.style.width = targetWidth + 'px';
 
+      const BASE_LINE_HEIGHT = 18;
       let html = '';
       for (let i = 0; i < lines.length; i++) {
         measureDiv.textContent = lines[i] || ' ';
-        const h = Math.max(16.5, measureDiv.offsetHeight || 16.5);
-        html += `<div style="height: ${h}px; line-height: 16.5px; box-sizing: border-box;">${i + 1}</div>`;
+        const measuredHeight = measureDiv.getBoundingClientRect().height || BASE_LINE_HEIGHT;
+        const lineCount = Math.max(1, Math.round(measuredHeight / BASE_LINE_HEIGHT));
+        const h = lineCount * BASE_LINE_HEIGHT;
+        html += `<div style="height: ${h}px; line-height: ${BASE_LINE_HEIGHT}px; box-sizing: border-box;">${i + 1}</div>`;
       }
       lineNumbersEl.innerHTML = html;
     };
