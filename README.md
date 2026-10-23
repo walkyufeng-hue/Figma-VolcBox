@@ -13,7 +13,7 @@
 
 <br>
 
-[🌐 访问官方主页](https://volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://volcbox.pages.dev/VolcBox_v1.1.5.zip) · [🐛 提交反馈 / Issue](https://github.com/haifengcy/Figma-VolcBox/issues)
+[🌐 访问官方主页](https://figma-volcbox.pages.dev) · [📦 下载插件安装包 (.zip)](https://figma-volcbox.pages.dev/VolcBox_v1.1.5.zip) · [🐛 提交反馈 / Issue](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 <br>
 
@@ -61,7 +61,7 @@
 ## 🚀 极速上手（3 步搞定）
 
 1. **下载安装包**：
-   直接下载最新 [VolcBox_v1.1.5.zip](https://volcbox.pages.dev/VolcBox_v1.1.5.zip) 并解压到本地（或 `git clone https://github.com/haifengcy/Figma-VolcBox.git`）；
+   直接下载最新 [VolcBox_v1.1.5.zip](https://figma-volcbox.pages.dev/VolcBox_v1.1.5.zip) 并解压到本地（或 `git clone https://github.com/walkyufeng-hue/Figma-VolcBox.git`）；
 2. **在 Figma 中导入**：
    Figma 菜单：`Plugins` ➔ `Development` ➔ `Import plugin from manifest...`，选中目录中的 **`manifest.json`**；
 3. **即刻提效**：
@@ -79,9 +79,9 @@
 
 ## 🌐 官方主页与生态
 
-- 🔗 **官方主页**：[https://volcbox.pages.dev](https://volcbox.pages.dev)
-- 📦 **Releases 发版**：[GitHub Releases](https://github.com/haifengcy/Figma-VolcBox/releases)
-- 💬 **问题反馈**：[GitHub Issues](https://github.com/haifengcy/Figma-VolcBox/issues)
+- 🔗 **官方主页**：[https://figma-volcbox.pages.dev](https://figma-volcbox.pages.dev)
+- 📦 **Releases 发版**：[GitHub Releases](https://github.com/walkyufeng-hue/Figma-VolcBox/releases)
+- 💬 **问题反馈**：[GitHub Issues](https://github.com/walkyufeng-hue/Figma-VolcBox/issues)
 
 ---
 
