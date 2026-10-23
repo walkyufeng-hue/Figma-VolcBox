@@ -68,8 +68,10 @@ console.log(`========================================\n`);
 const readmePath = path.join(rootDir, 'README.md');
 let readme = fs.readFileSync(readmePath, 'utf-8');
 
-readme = readme.replace(/badge\/version-v[0-9.]+-blue\.svg\?style=flat-square\)\(https:\/\/github\.com\/[^/]+\/Figma-VolcBox\/releases\)/g,
-  `badge/version-${versionTag}-blue.svg?style=flat-square)(${config.githubReleases})`);
+readme = readme.replace(/badge\/version-v[0-9.]+-blue\.svg\?style=flat-square/g,
+  `badge/version-${versionTag}-blue.svg?style=flat-square`);
+readme = readme.replace(/\(https:\/\/github\.com\/[^/]+\/Figma-VolcBox\/releases\)/g,
+  `(${config.githubReleases})`);
 
 readme = readme.replace(/badge\/website-[^/]+-orange\.svg\?style=flat-square\)\(https:\/\/[^)]+\)/g,
   `badge/website-${config.domainBadgeName}-orange.svg?style=flat-square)(${config.domain})`);
