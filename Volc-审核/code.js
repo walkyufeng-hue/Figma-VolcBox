@@ -52,6 +52,7 @@ const DEFAULT_SETTINGS = {
         languages: ['en', 'ja', 'ko'],
         direction: 'right',
         spacing: 40,
+        namingPattern: '{locale}',
       },
     ],
     activeProfileId: 'default-profile-1',
@@ -768,6 +769,118 @@ const DataProtectionEngine = {
     }
 
     return false;
+  },
+
+  preserveWhitespace(origRaw, transRaw) {
+    if (!origRaw || !transRaw || typeof origRaw !== 'string' || typeof transRaw !== 'string') {
+      return transRaw;
+    }
+
+    let result = transRaw;
+
+    const leadingMatch = origRaw.match(/^(\s+)/);
+    const trailingMatch = origRaw.match(/(\s+)$/);
+    const origLeading = leadingMatch ? leadingMatch[1] : '';
+    const origTrailing = trailingMatch ? trailingMatch[1] : '';
+
+    if (origLeading && !result.startsWith(origLeading)) {
+      result = origLeading + result.replace(/^\s*/, '');
+    }
+    if (origTrailing && !result.endsWith(origTrailing)) {
+      result = result.replace(/\s*$/, '') + origTrailing;
+    }
+
+    if (/<s id="\d+">/i.test(origRaw) && /<s id="\d+">/i.test(result)) {
+      result = this.preserveTagWhitespace(origRaw, result);
+    }
+
+    result = this.preserveNumberSpacing(origRaw, result);
+
+    return result;
+  },
+
+  preserveNumberSpacing(origRaw, transRaw) {
+    const cleanOrig = origRaw.replace(/<\/?(?:s|span)\b[^>]*>/gi, '');
+    const numRegex = /([+-]?\d+(?:[.,]\d+)*(?:\+|%|％)?)/g;
+    let match;
+    const numSpecs = [];
+
+    while ((match = numRegex.exec(cleanOrig)) !== null) {
+      const numStr = match[1];
+      const startIdx = match.index;
+      const endIdx = startIdx + numStr.length;
+
+      const spaceBefore = startIdx > 0 && /\s/.test(cleanOrig[startIdx - 1]);
+      const spaceAfter = endIdx < cleanOrig.length && /\s/.test(cleanOrig[endIdx]);
+
+      if (spaceBefore || spaceAfter) {
+        numSpecs.push({ num: numStr, spaceBefore, spaceAfter });
+      }
+    }
+
+    if (numSpecs.length === 0) return transRaw;
+
+    let res = transRaw;
+
+    for (const spec of numSpecs) {
+      const escNum = spec.num.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      if (spec.spaceBefore) {
+        const reBeforeChar = new RegExp(`([^\\s<>])(${escNum})`, 'g');
+        res = res.replace(reBeforeChar, '$1 $2');
+
+        const reBeforeTag = new RegExp(`(<\\/s>|<\\/span>)(<s\\s+id="\\d+">${escNum})`, 'gi');
+        res = res.replace(reBeforeTag, '$1 $2');
+      }
+
+      if (spec.spaceAfter) {
+        const reAfterChar = new RegExp(`(${escNum})([^\\s<>])`, 'g');
+        res = res.replace(reAfterChar, '$1 $2');
+
+        const reAfterTag = new RegExp(`(${escNum}<\\/s>|<\\/span>)(<s\\s+id="\\d+">[^\\s])`, 'gi');
+        res = res.replace(reAfterTag, '$1 $2');
+      }
+    }
+
+    res = res.replace(/([^\S\r\n])\1+/g, ' ');
+    return res;
+  },
+
+  preserveTagWhitespace(origRaw, transRaw) {
+    const tagMap = new Map();
+    const tagRegex = /<s id="(\d+)">([\s\S]*?)<\/s>/gi;
+    let m;
+    while ((m = tagRegex.exec(origRaw)) !== null) {
+      const id = m[1];
+      const content = m[2];
+      tagMap.set(id, {
+        leadingSpace: /^\s/.test(content),
+        trailingSpace: /\s$/.test(content)
+      });
+    }
+
+    const origHadSpaceBetweenTags = /<\/s>\s+<s\b/i.test(origRaw);
+
+    let res = transRaw;
+
+    res = res.replace(/<s id="(\d+)">([\s\S]*?)<\/s>/gi, (match, id, content) => {
+      const spec = tagMap.get(id);
+      if (!spec) return match;
+      let newContent = content;
+      if (spec.leadingSpace && !/^\s/.test(newContent)) {
+        newContent = ' ' + newContent;
+      }
+      if (spec.trailingSpace && !/\s$/.test(newContent)) {
+        newContent = newContent + ' ';
+      }
+      return `<s id="${id}">${newContent}</s>`;
+    });
+
+    if (origHadSpaceBetweenTags) {
+      res = res.replace(/<\/s>(?!\s)<s\b/gi, '</s> <s');
+    }
+
+    return res;
   }
 };
 
@@ -1319,9 +1432,386 @@ const LayoutEngine = {
   sortByVisualOrder(nodes) {
     if (!nodes || nodes.length === 0) return [];
     return [...nodes].sort((a, b) => {
-      if (Math.abs(a.y - b.y) < 120) return a.x - b.x;
+      const threshold = Math.min(a.height || 100, b.height || 100) * 0.5;
+      if (Math.abs(a.y - b.y) < Math.max(50, threshold)) return a.x - b.x;
       return a.y - b.y;
     });
+  }
+};
+
+// =====================================================================
+// I18N LOCALE DEFINITIONS & LANGUAGE DETECTION ENGINE
+// Standard mapping conforming to LanguageEnum.java (38 standard + extended)
+// =====================================================================
+const I18N_LOCALE_MAP = {
+  'zh': 'zh-CN', 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW',
+  'zh-hans': 'zh-CN', 'zh-hant': 'zh-TW', 'hans': 'zh-CN', 'hant': 'zh-TW',
+  'en': 'en-US', 'es': 'es-ES', 'de': 'de-DE', 'fr': 'fr-FR',
+  'cs': 'cs-CZ', 'bg': 'bg-BG', 'fi': 'fi-FI', 'lt': 'lt-LT',
+  'is': 'is-IS', 'ga': 'ga-IE', 'et': 'et-EE', 'sl': 'sl-SI',
+  'id': 'in-ID', 'in': 'in-ID', 'id-id': 'in-ID', 'in-id': 'in-ID',
+  'ro': 'ro-RO', 'pt': 'pt-PT', 'pt-BR': 'pt-BR',
+  'it': 'it-IT', 'vi': 'vi-VN', 'nl': 'nl-NL', 'ko': 'ko-KR',
+  'hi': 'hi-IN', 'ja': 'ja-JP', 'ar': 'ar-AR', 'ru': 'ru-RU',
+  'pl': 'pl-PL', 'ms': 'ms-MY', 'hu': 'hu-HU', 'el': 'el-GR',
+  'sv': 'sv-SE', 'sr': 'sr-RS', 'da': 'da-DK', 'no': 'no-NO',
+  'nb': 'no-NO', 'sk': 'sk-SK', 'hr': 'hr-HR', 'tr': 'tr-TR',
+  'uk': 'uk-UA', 'th': 'th-TH', 'he': 'he-IL', 'tl': 'tl-PH',
+  'bn': 'bn-BD', 'ur': 'ur-PK', 'fa': 'fa-IR', 'mn': 'mn-MN',
+  'my': 'my-MM', 'km': 'km-KH', 'lv': 'lv-LV', 'sw': 'sw-KE',
+  'af': 'af-ZA', 'ca': 'ca-ES'
+};
+
+const I18N_LANGUAGE_NAMES = {
+  'zh-CN': '简体中文', 'zh-TW': '繁體中文', 'en-US': '英语', 'es-ES': '西班牙语',
+  'de-DE': '德语', 'fr-FR': '法语', 'cs-CZ': '捷克语', 'bg-BG': '保加利亚语',
+  'fi-FI': '芬兰语', 'lt-LT': '立陶宛语', 'is-IS': '冰岛语', 'ga-IE': '爱尔兰语',
+  'et-EE': '爱沙尼亚语', 'sl-SI': '斯洛文尼亚语', 'in-ID': '印尼语', 'ro-RO': '罗马尼亚语',
+  'pt-PT': '葡萄牙语', 'pt-BR': '巴西葡语', 'it-IT': '意大利语', 'vi-VN': '越南语',
+  'nl-NL': '荷兰语', 'ko-KR': '韩语', 'hi-IN': '印地语', 'ja-JP': '日语',
+  'ar-AR': '阿拉伯语', 'ru-RU': '俄语', 'pl-PL': '波兰语', 'ms-MY': '马来语',
+  'hu-HU': '匈牙利语', 'el-GR': '希腊语', 'sv-SE': '瑞典语', 'sr-RS': '塞尔维亚语',
+  'da-DK': '丹麦语', 'no-NO': '挪威语', 'sk-SK': '斯洛伐克语', 'hr-HR': '克罗地亚语',
+  'tr-TR': '土耳其语', 'uk-UA': '乌克兰语', 'th-TH': '泰语', 'he-IL': '希伯来语',
+  'tl-PH': '菲律宾语', 'bn-BD': '孟加拉语', 'ur-PK': '乌尔都语', 'fa-IR': '波斯语',
+  'mn-MN': '蒙古语', 'my-MM': '缅甸语', 'km-KH': '高棉语', 'lv-LV': '拉脱维亚语',
+  'sw-KE': '斯瓦希里语', 'af-ZA': '南非荷兰语', 'ca-ES': '加泰罗尼亚语'
+};
+
+const I18N_LANGUAGE_FLAGS = {
+  'zh-CN': '🇨🇳', 'zh-TW': '🇭🇰', 'en-US': '🇺🇸', 'es-ES': '🇪🇸',
+  'de-DE': '🇩🇪', 'fr-FR': '🇫🇷', 'cs-CZ': '🇨🇿', 'bg-BG': '🇧🇬',
+  'fi-FI': '🇫🇮', 'lt-LT': '🇱🇹', 'is-IS': '🇮🇸', 'ga-IE': '🇮🇪',
+  'et-EE': '🇪🇪', 'sl-SI': '🇸🇮', 'in-ID': '🇮🇩', 'ro-RO': '🇷🇴',
+  'pt-PT': '🇵🇹', 'pt-BR': '🇧🇷', 'it-IT': '🇮🇹', 'vi-VN': '🇻🇳',
+  'nl-NL': '🇳🇱', 'ko-KR': '🇰🇷', 'hi-IN': '🇮🇳', 'ja-JP': '🇯🇵',
+  'ar-AR': '🇸🇦', 'ru-RU': '🇷🇺', 'pl-PL': '🇵🇱', 'ms-MY': '🇲🇾',
+  'hu-HU': '🇭🇺', 'el-GR': '🇬🇷', 'sv-SE': '🇸🇪', 'sr-RS': '🇷🇸',
+  'da-DK': '🇩🇰', 'no-NO': '🇳🇴', 'sk-SK': '🇸🇰', 'hr-HR': '🇭🇷',
+  'tr-TR': '🇹🇷', 'uk-UA': '🇺🇦', 'th-TH': '🇹🇭', 'he-IL': '🇮🇱',
+  'tl-PH': '🇵🇭', 'bn-BD': '🇧🇩', 'ur-PK': '🇵🇰', 'fa-IR': '🇮🇷',
+  'mn-MN': '🇲🇳', 'my-MM': '🇲🇲', 'km-KH': '🇰🇭', 'lv-LV': '🇱🇻',
+  'sw-KE': '🇰🇪', 'af-ZA': '🇿🇦', 'ca-ES': '🏴'
+};
+
+function formatArtboardName(pattern, originalName, langObj) {
+  const code = langObj.code || '';
+  const locale = langObj.locale || I18N_LOCALE_MAP[code] || code;
+  const name_cn = langObj.name || I18N_LANGUAGE_NAMES[locale] || code;
+  const en = langObj.en || locale;
+  const name = originalName || '';
+
+  if (!pattern) {
+    return `${name} - ${name_cn} - ${en}`;
+  }
+
+  return pattern
+    .replace(/\{locale\}/g, locale)
+    .replace(/\{code\}/g, code)
+    .replace(/\{name\}/g, name)
+    .replace(/\{name_cn\}/g, name_cn)
+    .replace(/\{en\}/g, en);
+}
+
+const STOPWORDS = {
+  'es': ['el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas', 'y', 'en', 'para', 'con', 'por', 'sin', 'sobre', 'este', 'esta', 'estos', 'estas', 'del', 'al', 'que', 'como', 'más', 'pero', 'su', 'sus', 'cuenta', 'comienza', 'operar', 'opere', 'opera', 'gana', 'mejores', 'condiciones', 'gratis', 'puntos', 'ahora', 'bono', 'bonos', 'obtenga', 'cero', 'depósito', 'reembolso', 'primeras', 'operaciones', 'diarias'],
+  'pt': ['o', 'a', 'os', 'as', 'um', 'uma', 'uns', 'umas', 'e', 'em', 'para', 'com', 'por', 'sem', 'sobre', 'este', 'esta', 'estes', 'estas', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas', 'que', 'como', 'mais', 'mas', 'seu', 'sua', 'seus', 'suas', 'negocie', 'ganhe', 'crédito', 'ativos', 'globais', 'comissão', 'agora', 'conta', 'grátis', 'bônus', 'receba', 'taxa', 'depósito', 'reembolso', 'duplo', 'primeiras', 'negociações', 'diárias'],
+  'fr': ['le', 'la', 'les', 'un', 'une', 'des', 'du', 'de', 'et', 'en', 'dans', 'pour', 'avec', 'sans', 'sur', 'ce', 'cette', 'ces', 'au', 'aux', 'qui', 'que', 'comme', 'plus', 'mais', 'son', 'sa', 'ses', 'tradez', 'gagnez', 'marchés', 'mondiaux', 'commission', 'compte', 'maintenant', 'gratuit', 'bonus', 'obtenez', 'négociez', 'frais', 'jusqu', 'remboursement', 'premières', 'transactions', 'quotidiennes', 'crédit'],
+  'de': ['der', 'die', 'das', 'ein', 'eine', 'einen', 'einem', 'einer', 'eines', 'und', 'in', 'im', 'für', 'mit', 'ohne', 'auf', 'aus', 'bei', 'nach', 'zu', 'zum', 'zur', 'den', 'dem', 'des', 'von', 'vom', 'dass', 'wie', 'mehr', 'aber', 'ihr', 'ihre', 'ihren', 'handeln', 'sie', 'führenden', 'finanzinstrumenten', 'konto', 'jetzt', 'kostenlos', 'bonus', 'erhalten', 'gebühren', 'guthaben', 'verdienen', 'doppelte', 'rückerstattung', 'ersten', 'trades', 'täglich'],
+  'it': ['il', 'la', 'lo', 'i', 'gli', 'le', 'un', 'uno', 'una', 'e', 'ed', 'in', 'nel', 'nella', 'nei', 'negli', 'nelle', 'per', 'con', 'senza', 'su', 'sul', 'sulla', 'sui', 'sugli', 'sulle', 'da', 'dal', 'dalla', 'dai', 'dagli', 'dalle', 'del', 'della', 'dei', 'degli', 'delle', 'al', 'alla', 'ai', 'agli', 'alle', 'che', 'come', 'più', 'ma', 'suo', 'sua', 'suoi', 'sue', 'fai', 'trading', 'guadagna', 'credito', 'mercati', 'globali', 'commissioni', 'conto', 'ora', 'gratis', 'bonus', 'ottieni', 'fino', 'zero', 'doppio', 'rimborso', 'prime', 'operazioni', 'giornaliere'],
+  'nl': ['de', 'het', 'een', 'en', 'in', 'voor', 'met', 'zonder', 'op', 'uit', 'bij', 'naar', 'tot', 'over', 'om', 'te', 'van', 'dat', 'die', 'zoals', 'meer', 'maar', 'zijn', 'haar', 'hun', 'uw', 'je', 'jouw', 'begin', 'handelen', 'handel', 'verdien', 'tegoed', 'dubbele', 'terugbetalingen', 'eerste', 'transacties', 'dagelijks', 'commissie', 'rekening', 'nu', 'gratis', 'bonus', 'krijg', 'ontvang'],
+  'id': ['yang', 'di', 'dan', 'dari', 'ini', 'itu', 'untuk', 'dalam', 'ke', 'dengan', 'tanpa', 'pada', 'oleh', 'sebagai', 'lebih', 'hanya', 'anda', 'kamu', 'kita', 'kami', 'bisa', 'dapat', 'akan', 'sudah', 'setelah', 'saat', 'sekarang', 'banyak', 'semua', 'daftar', 'dapatkan', 'bonus', 'selamat', 'datang', 'akun', 'gratis', 'poin', 'hingga', 'komisi', 'mulai', 'uang', 'trading', 'bertransaksi', 'rabat', 'ganda', 'pertama', 'setiap', 'hari'],
+  'ms': ['yang', 'di', 'dan', 'dari', 'ini', 'itu', 'untuk', 'dalam', 'ke', 'dengan', 'tanpa', 'pada', 'oleh', 'sebagai', 'lebih', 'hanya', 'anda', 'awak', 'kita', 'kami', 'boleh', 'dapat', 'akan', 'sudah', 'selepas', 'saat', 'sekarang', 'banyak', 'semua', 'daftar', 'dapatkan', 'bonus', 'selamat', 'datang', 'akaun', 'percuma', 'mata', 'sehingga', 'komisen', 'mula', 'wang', 'berdagang', 'rebat', 'berganda', 'dagangan', 'pertama', 'setiap', 'hari'],
+  'pl': ['w', 'we', 'z', 'ze', 'na', 'do', 'i', 'oraz', 'dla', 'o', 'od', 'po', 'za', 'ze', 'przez', 'bez', 'jak', 'jako', 'ale', 'lub', 'czy', 'się', 'ten', 'ta', 'to', 'te', 'tych', 'rozpocznij', 'handel', 'handluj', 'zdobywaj', 'kredyt', 'podwójne', 'rabaty', 'pierwsze', 'transakcje', 'dziennie', 'rynkach', 'globalnych', 'konto', 'teraz', 'darmowe', 'punkty', 'bonus', 'bonusu', 'zdobądź', 'prowizji'],
+  'cs': ['v', 've', 'z', 'ze', 'na', 'do', 'a', 'i', 'pro', 'o', 'od', 'po', 'za', 'přes', 'bez', 'jak', 'jako', 'ale', 'nebo', 'se', 'si', 'tento', 'tato', 'toto', 'tyto', 'začněte', 'obchodovat', 'obchodujte', 'získejte', 'kredit', 'dvojnásobné', 'vrácení', 'vaše', 'první', 'obchody', 'denně', 'nulovými', 'poplatky', 'účet', 'nyní', 'zdarma', 'body', 'bonus'],
+  'sk': ['v', 'vo', 'z', 'zo', 'na', 'do', 'a', 'i', 'pre', 'o', 'od', 'po', 'za', 'cez', 'bez', 'ako', 'ale', 'alebo', 'sa', 'si', 'tento', 'táto', 'toto', 'tieto', 'začnite', 'obchodovať', 'obchodujte', 'získajte', 'kredit', 'dvojnásobné', 'vrátenie', 'vaše', 'prvé', 'obchody', 'denne', 'poplatkami', 'účet', 'teraz', 'zadarmo', 'body', 'bonus'],
+  'hr': ['u', 'na', 'za', 'i', 's', 'sa', 'od', 'do', 'o', 'po', 'k', 'ka', 'kod', 'pri', 'prema', 'kroz', 'bez', 'zbog', 'iz', 'trgujte', 'zaradite', 'kredit', 'dvostruki', 'povrat', 'vaše', 'prve', 'trgovine', 'dnevno', 'račun', 'sada', 'besplatno', 'bodovi', 'bonus'],
+  'hu': ['a', 'az', 'és', 'egy', 'hogy', 'nem', 'van', 'volt', 'lesz', 'meg', 'el', 'ki', 'be', 'le', 'fel', 'csak', 'vagy', 'mint', 'ha', 'már', 'itt', 'ott', 'kezdjen', 'kereskedni', 'kereskedj', 'keress', 'kreditet', 'dupla', 'visszatérítés', 'napi', 'első', 'kereskedésedre', 'most', 'számla', 'ingyenes', 'pontok', 'bónusz', 'bónuszt', 'szerezzen'],
+  'ro': ['și', 'si', 'în', 'in', 'la', 'pe', 'de', 'cu', 'fără', 'fara', 'pentru', 'din', 'spre', 'despre', 'un', 'o', 'unui', 'unei', 'care', 'ce', 'cum', 'mai', 'dar', 'sau', 'începeți', 'începe', 'tranzacționați', 'câștigați', 'rambursări', 'duble', 'tranzacții', 'zilnice', 'astăzi', 'cont', 'acum', 'gratuit', 'puncte', 'bonus', 'obțineți'],
+  'tr': ['ve', 'veya', 'ile', 'için', 'icin', 'bir', 'bu', 'şu', 'o', 'da', 'de', 'daha', 'en', 'gibi', 'kadar', 'sonra', 'önce', 'sıfır', 'sifir', 'komisyonla', 'küresel', 'piyasalarda', 'işlem', 'islem', 'yapın', 'yapin', 'hesap', 'şimdi', 'ücretsiz', 'bonus', 'kazanın'],
+  'da': ['og', 'i', 'på', 'til', 'for', 'med', 'uden', 'af', 'om', 'fra', 'ved', 'under', 'over', 'en', 'et', 'den', 'det', 'de', 'som', 'der', 'ikke', 'men', 'eller', 'da', 'få', 'tilmeld', 'start', 'begynd', 'handl', 'tjen', 'kredit', 'dobbelt', 'refusion', 'dine', 'første', 'handler', 'dagligt', 'konto', 'nu', 'gratis', 'bonus', 'gebyr', 'op', 'nul'],
+  'no': ['og', 'i', 'på', 'til', 'for', 'med', 'uten', 'av', 'om', 'fra', 'ved', 'under', 'over', 'en', 'et', 'den', 'det', 'de', 'som', 'der', 'ikke', 'men', 'eller', 'da', 'få', 'registrer', 'start', 'begynn', 'handle', 'tjen', 'kreditt', 'dobbel', 'refusjon', 'dine', 'første', 'handler', 'daglig', 'konto', 'nå', 'gratis', 'bonus', 'gebyrer', 'opp', 'opptil', 'null'],
+  'sv': ['och', 'i', 'på', 'till', 'för', 'med', 'utan', 'av', 'om', 'från', 'vid', 'under', 'över', 'en', 'ett', 'den', 'det', 'de', 'som', 'inte', 'men', 'eller', 'börja', 'handla', 'globala', 'tillgångar', 'idag', 'konto', 'nu', 'gratis', 'bonus', 'courtage', 'upp', 'noll'],
+  'fi': ['ja', 'on', 'ei', 'se', 'että', 'tai', 'mutta', 'kuin', 'kun', 'jos', 'myös', 'aloita', 'kaupankäynti', 'ilman', 'palkkioita', 'tili', 'nyt', 'ilmainen', 'bonus', 'bonuksen', 'saat', 'jopa'],
+  'en': ['the', 'and', 'to', 'of', 'a', 'in', 'is', 'that', 'for', 'you', 'it', 'with', 'on', 'as', 'are', 'be', 'this', 'from', 'at', 'have', 'your', 'or', 'by', 'one', 'all', 'not', 'new', 'start', 'trading', 'trade', 'earn', 'credit', 'double', 'rebates', 'first', 'trades', 'daily', 'global', 'markets', 'zero', 'commission', 'account', 'now', 'free', 'points', 'bonus', 'get']
+};
+
+const LanguageDetector = {
+  // 1. Detect from Node Name (Highest accuracy if designer or prior plugin named the frame)
+  detectFromName(name) {
+    if (!name || typeof name !== 'string') return null;
+    const n = name.trim().toLowerCase();
+
+    // Direct locale match (e.g. "en-US", "ar-AR", "in-ID", "banner_en-us")
+    for (const [code, loc] of Object.entries(I18N_LOCALE_MAP)) {
+      const locL = loc.toLowerCase();
+      const reg = new RegExp(`(^|[\\s_\\-.\\[\\]/])${locL}([\\s_\\-.\\[\\]/]|$)`, 'i');
+      if (reg.test(n)) {
+        return { code, locale: loc, confidence: 'high', source: 'name-locale' };
+      }
+    }
+
+    // Chinese language name hints
+    const nameMapCn = [
+      { k: '简体中文', loc: 'zh-CN', c: 'zh-CN' }, { k: '简中', loc: 'zh-CN', c: 'zh-CN' },
+      { k: '繁体中文', loc: 'zh-TW', c: 'zh-TW' }, { k: '中文繁体', loc: 'zh-TW', c: 'zh-TW' }, { k: '繁中', loc: 'zh-TW', c: 'zh-TW' },
+      { k: '阿拉伯', loc: 'ar-AR', c: 'ar' }, { k: '保加利亚', loc: 'bg-BG', c: 'bg' },
+      { k: '捷克', loc: 'cs-CZ', c: 'cs' }, { k: '丹麦', loc: 'da-DK', c: 'da' },
+      { k: '德语', loc: 'de-DE', c: 'de' }, { k: '德文', loc: 'de-DE', c: 'de' },
+      { k: '希腊', loc: 'el-GR', c: 'el' }, { k: '英语', loc: 'en-US', c: 'en' }, { k: '英文', loc: 'en-US', c: 'en' },
+      { k: '西班牙', loc: 'es-ES', c: 'es' }, { k: '西语', loc: 'es-ES', c: 'es' },
+      { k: '芬兰', loc: 'fi-FI', c: 'fi' }, { k: '法语', loc: 'fr-FR', c: 'fr' }, { k: '法文', loc: 'fr-FR', c: 'fr' },
+      { k: '希伯来', loc: 'he-IL', c: 'he' }, { k: '印地', loc: 'hi-IN', c: 'hi' },
+      { k: '克罗地亚', loc: 'hr-HR', c: 'hr' }, { k: '匈牙利', loc: 'hu-HU', c: 'hu' },
+      { k: '印尼', loc: 'in-ID', c: 'id' }, { k: '意大利', loc: 'it-IT', c: 'it' }, { k: '意语', loc: 'it-IT', c: 'it' },
+      { k: '日语', loc: 'ja-JP', c: 'ja' }, { k: '日文', loc: 'ja-JP', c: 'ja' },
+      { k: '韩语', loc: 'ko-KR', c: 'ko' }, { k: '韩文', loc: 'ko-KR', c: 'ko' },
+      { k: '马来', loc: 'ms-MY', c: 'ms' }, { k: '荷兰', loc: 'nl-NL', c: 'nl' },
+      { k: '挪威', loc: 'no-NO', c: 'no' }, { k: '波兰', loc: 'pl-PL', c: 'pl' },
+      { k: '葡萄牙', loc: 'pt-PT', c: 'pt' }, { k: '葡语', loc: 'pt-PT', c: 'pt' }, { k: '巴西葡', loc: 'pt-BR', c: 'pt-BR' },
+      { k: '罗马尼亚', loc: 'ro-RO', c: 'ro' }, { k: '俄语', loc: 'ru-RU', c: 'ru' }, { k: '俄文', loc: 'ru-RU', c: 'ru' },
+      { k: '斯洛伐克', loc: 'sk-SK', c: 'sk' }, { k: '斯洛文尼', loc: 'sl-SI', c: 'sl' },
+      { k: '瑞典', loc: 'sv-SE', c: 'sv' }, { k: '泰语', loc: 'th-TH', c: 'th' }, { k: '泰文', loc: 'th-TH', c: 'th' },
+      { k: '土耳其', loc: 'tr-TR', c: 'tr' }, { k: '乌克兰', loc: 'uk-UA', c: 'uk' },
+      { k: '越南', loc: 'vi-VN', c: 'vi' }, { k: '越文', loc: 'vi-VN', c: 'vi' },
+      { k: '立陶宛', loc: 'lt-LT', c: 'lt' }, { k: '爱沙尼亚', loc: 'et-EE', c: 'et' },
+      { k: '冰岛', loc: 'is-IS', c: 'is' }, { k: '爱尔兰', loc: 'ga-IE', c: 'ga' },
+      { k: '塞尔维亚', loc: 'sr-RS', c: 'sr' }, { k: '赛尔维亚', loc: 'sr-RS', c: 'sr' }
+    ];
+    for (const item of nameMapCn) {
+      if (n.includes(item.k)) {
+        return { code: item.c, locale: item.loc, confidence: 'high', source: 'name-cn' };
+      }
+    }
+
+    // English language name hints
+    const nameMapEn = [
+      { k: 'arabic', loc: 'ar-AR', c: 'ar' }, { k: 'bulgarian', loc: 'bg-BG', c: 'bg' },
+      { k: 'czech', loc: 'cs-CZ', c: 'cs' }, { k: 'danish', loc: 'da-DK', c: 'da' },
+      { k: 'german', loc: 'de-DE', c: 'de' }, { k: 'greek', loc: 'el-GR', c: 'el' },
+      { k: 'english', loc: 'en-US', c: 'en' }, { k: 'spanish', loc: 'es-ES', c: 'es' },
+      { k: 'finnish', loc: 'fi-FI', c: 'fi' }, { k: 'french', loc: 'fr-FR', c: 'fr' },
+      { k: 'hebrew', loc: 'he-IL', c: 'he' }, { k: 'hindi', loc: 'hi-IN', c: 'hi' },
+      { k: 'croatian', loc: 'hr-HR', c: 'hr' }, { k: 'hungarian', loc: 'hu-HU', c: 'hu' },
+      { k: 'indonesian', loc: 'in-ID', c: 'id' }, { k: 'italian', loc: 'it-IT', c: 'it' },
+      { k: 'japanese', loc: 'ja-JP', c: 'ja' }, { k: 'korean', loc: 'ko-KR', c: 'ko' },
+      { k: 'malay', loc: 'ms-MY', c: 'ms' }, { k: 'dutch', loc: 'nl-NL', c: 'nl' },
+      { k: 'norwegian', loc: 'no-NO', c: 'no' }, { k: 'polish', loc: 'pl-PL', c: 'pl' },
+      { k: 'portuguese', loc: 'pt-PT', c: 'pt' }, { k: 'romanian', loc: 'ro-RO', c: 'ro' },
+      { k: 'russian', loc: 'ru-RU', c: 'ru' }, { k: 'slovak', loc: 'sk-SK', c: 'sk' },
+      { k: 'slovenian', loc: 'sl-SI', c: 'sl' }, { k: 'swedish', loc: 'sv-SE', c: 'sv' },
+      { k: 'thai', loc: 'th-TH', c: 'th' }, { k: 'turkish', loc: 'tr-TR', c: 'tr' },
+      { k: 'ukrainian', loc: 'uk-UA', c: 'uk' }, { k: 'vietnamese', loc: 'vi-VN', c: 'vi' }
+    ];
+    for (const item of nameMapEn) {
+      if (n.includes(item.k)) {
+        return { code: item.c, locale: item.loc, confidence: 'high', source: 'name-en' };
+      }
+    }
+
+    // Token match for 2-letter codes: e.g. "banner_en", "icon-ar", "es_01"
+    for (const [code, loc] of Object.entries(I18N_LOCALE_MAP)) {
+      if (code.length === 2) {
+        const reg = new RegExp(`(^|[\\s_\\-.\\[\\]/])${code}([\\s_\\-.\\[\\]/]|$)`, 'i');
+        if (reg.test(n)) {
+          return { code, locale: loc, confidence: 'medium', source: 'name-code' };
+        }
+      }
+    }
+
+    return null;
+  },
+
+  // 2. Comprehensive Multi-layer Detection (Name + Text + Script + Diacritics + Stopwords)
+  detect(text, artboardName = '') {
+    // Check node name first
+    const fromName = this.detectFromName(artboardName);
+    if (fromName && fromName.confidence === 'high') {
+      return fromName;
+    }
+
+    if (!text || typeof text !== 'string') {
+      return fromName || { code: 'en', locale: 'en-US', confidence: 'low', source: 'default' };
+    }
+    const clean = text.trim();
+    if (!clean) {
+      return fromName || { code: 'en', locale: 'en-US', confidence: 'low', source: 'default' };
+    }
+
+    // 1. Script-based detection (100% precision)
+    // Arabic
+    if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(clean)) {
+      return { code: 'ar', locale: 'ar-AR', confidence: 'high', source: 'script-arabic' };
+    }
+    // Hebrew
+    if (/[\u0590-\u05FF]/.test(clean)) {
+      return { code: 'he', locale: 'he-IL', confidence: 'high', source: 'script-hebrew' };
+    }
+    // Thai
+    if (/[\u0E00-\u0E7F]/.test(clean)) {
+      return { code: 'th', locale: 'th-TH', confidence: 'high', source: 'script-thai' };
+    }
+    // Hindi / Devanagari
+    if (/[\u0900-\u097F]/.test(clean)) {
+      return { code: 'hi', locale: 'hi-IN', confidence: 'high', source: 'script-hindi' };
+    }
+    // Bengali
+    if (/[\u0980-\u09FF]/.test(clean)) {
+      return { code: 'bn', locale: 'bn-BD', confidence: 'high', source: 'script-bengali' };
+    }
+    // Burmese
+    if (/[\u1000-\u109F]/.test(clean)) {
+      return { code: 'my', locale: 'my-MM', confidence: 'high', source: 'script-burmese' };
+    }
+    // Khmer
+    if (/[\u1780-\u17FF]/.test(clean)) {
+      return { code: 'km', locale: 'km-KH', confidence: 'high', source: 'script-khmer' };
+    }
+    // Korean
+    if (/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/.test(clean)) {
+      return { code: 'ko', locale: 'ko-KR', confidence: 'high', source: 'script-korean' };
+    }
+    // Japanese (Hiragana/Katakana)
+    if (/[\u3040-\u309F\u30A0-\u30FF]/.test(clean)) {
+      return { code: 'ja', locale: 'ja-JP', confidence: 'high', source: 'script-japanese' };
+    }
+    // Greek
+    if (/[\u0370-\u03FF\u1F00-\u1FFF]/.test(clean)) {
+      return { code: 'el', locale: 'el-GR', confidence: 'high', source: 'script-greek' };
+    }
+    // Cyrillic family
+    if (/[\u0400-\u04FF]/.test(clean)) {
+      if (/[іїєґІЇЄҐ]/.test(clean)) return { code: 'uk', locale: 'uk-UA', confidence: 'high', source: 'script-ukrainian' };
+      if (/[ђјљњћџЂЈЉЊЋЏ]/.test(clean)) return { code: 'sr', locale: 'sr-RS', confidence: 'high', source: 'script-serbian' };
+      if (/[ъЪ]/.test(clean) || /\b(търгувайте|печелете|възстановяване|дневно|точки|регистрирайте|лева|вземете)\b/i.test(clean)) {
+        return { code: 'bg', locale: 'bg-BG', confidence: 'high', source: 'script-bulgarian' };
+      }
+      return { code: 'ru', locale: 'ru-RU', confidence: 'high', source: 'script-russian' };
+    }
+
+    // 2. High-specificity Diacritics & Core Overseas Vocabulary
+    // German (check before diacritics to catch words like täglich without confusing Slovak ä)
+    if (/[ß]/.test(clean) || /\b(rückerstattung|guthaben|verdienen|täglich|gebühren|handeln\s+&\s+guthaben)\b/i.test(clean)) {
+      return { code: 'de', locale: 'de-DE', confidence: 'high', source: 'diacritic-german' };
+    }
+    // Vietnamese
+    if (/[\u1EA0-\u1EF9đĐ]/.test(clean)) {
+      return { code: 'vi', locale: 'vi-VN', confidence: 'high', source: 'diacritic-vietnamese' };
+    }
+    // Turkish
+    if (/[ğĞıİşŞ]/.test(clean)) {
+      return { code: 'tr', locale: 'tr-TR', confidence: 'high', source: 'diacritic-turkish' };
+    }
+    // Slovak vs Czech
+    if (/[ťŤďĎľĽĺĹŕŔôÔ]/.test(clean) || /\b(dvojnásobné\s+vrátenie|prvé\s+obchody|denne|získajte|poplatkami)\b/i.test(clean)) {
+      return { code: 'sk', locale: 'sk-SK', confidence: 'high', source: 'diacritic-slovak' };
+    }
+    if (/[řŘůŮěĚ]/.test(clean) || /\b(dvojnásobné\s+vrácení|první\s+obchody|denně|získejte)\b/i.test(clean)) {
+      return { code: 'cs', locale: 'cs-CZ', confidence: 'high', source: 'diacritic-czech' };
+    }
+    // Polish
+    if (/[łŁąĄęĘśŚźŹżŻńŃćĆ]/.test(clean) || /\b(handluj|zdobywaj|podwójne\s+rabaty|transakcje\s+dziennie)\b/i.test(clean)) {
+      return { code: 'pl', locale: 'pl-PL', confidence: 'high', source: 'diacritic-polish' };
+    }
+    // Croatian
+    if (/[čČćĆđĐšŠžŽ]/.test(clean) || /\b(trgujte|zaradite|dvostruki\s+povrat|prve\s+3\s+trgovine|dnevno)\b/i.test(clean)) {
+      return { code: 'hr', locale: 'hr-HR', confidence: 'high', source: 'diacritic-croatian' };
+    }
+    // Hungarian
+    if (/[őŐűŰ]/.test(clean) || /\b(kereskedj|keress|kreditet|dupla\s+visszatérítés|első\s+3\s+kereskedésedre)\b/i.test(clean)) {
+      return { code: 'hu', locale: 'hu-HU', confidence: 'high', source: 'diacritic-hungarian' };
+    }
+    // Romanian
+    if (/[ăĂșȘțȚâÂîÎ]/.test(clean) || /\b(tranzacționați|câștigați|rambursări\s+duble|tranzacții\s+zilnice)\b/i.test(clean)) {
+      return { code: 'ro', locale: 'ro-RO', confidence: 'high', source: 'diacritic-romanian' };
+    }
+    // Spanish
+    if (/[ñÑ¿¡]/.test(clean) || /\b(reembolso\s+doble|primeras\s+3\s+operaciones|diarias|gana\s+crédito)\b/i.test(clean)) {
+      return { code: 'es', locale: 'es-ES', confidence: 'high', source: 'diacritic-spanish' };
+    }
+    // Portuguese
+    if (/[ãõÃÕ]/.test(clean) || /\b(reembolso\s+duplo|primeiras\s+3\s+negociações|diárias|ganhe\s+crédito)\b/i.test(clean)) {
+      return { code: 'pt', locale: 'pt-PT', confidence: 'high', source: 'diacritic-portuguese' };
+    }
+    // French
+    if (/[œŒ]/.test(clean) || /\b(remboursement|premières\s+transactions|quotidiennes|gagnez\s+du\s+crédit)\b/i.test(clean)) {
+      return { code: 'fr', locale: 'fr-FR', confidence: 'high', source: 'diacritic-french' };
+    }
+    // Italian
+    if (/\b(doppio\s+rimborso|prime\s+3\s+operazioni|giornaliere|guadagna\s+credito)\b/i.test(clean)) {
+      return { code: 'it', locale: 'it-IT', confidence: 'high', source: 'vocab-italian' };
+    }
+    // Dutch
+    if (/\b(dubbele\s+terugbetalingen|eerste\s+3\s+transacties|dagelijks|verdien\s+tegoed)\b/i.test(clean)) {
+      return { code: 'nl', locale: 'nl-NL', confidence: 'high', source: 'vocab-dutch' };
+    }
+
+    // Nordic: Danish vs Norwegian vs Swedish vs Finnish
+    if (/\b(dobbelt|refusion|dagligt|handl|tilmeld|begynd)\b/i.test(clean)) {
+      return { code: 'da', locale: 'da-DK', confidence: 'high', source: 'nordic-danish' };
+    }
+    if (/\b(kreditt|dobbel|refusjon|daglig|opptil|gebyrer|nå|uten)\b/i.test(clean)) {
+      return { code: 'no', locale: 'no-NO', confidence: 'high', source: 'nordic-norwegian' };
+    }
+    if (/(och|upp|börja|courtage|tillgångar)/i.test(clean) || (/[äöÄÖ]/.test(clean) && /(och|få|till|idag|noll|handla)/i.test(clean))) {
+      return { code: 'sv', locale: 'sv-SE', confidence: 'high', source: 'nordic-swedish' };
+    }
+    if (/[äöÄÖ]/.test(clean) && /(ja|on|ei|aloita|ilman|palkkioita|bonuksen)/i.test(clean)) {
+      return { code: 'fi', locale: 'fi-FI', confidence: 'high', source: 'nordic-finnish' };
+    }
+
+    // Southeast Asian: Malay vs Indonesian
+    if (/\b(sehingga|komisen|akaun|boleh|wang|mula|berdagang|rebat|berganda|dagangan)\b/i.test(clean)) {
+      return { code: 'ms', locale: 'ms-MY', confidence: 'high', source: 'vocab-malay' };
+    }
+    if (/\b(hingga|komisi|mulai|akun|bisa|rabat|ganda|bertransaksi)\b/i.test(clean)) {
+      return { code: 'id', locale: 'in-ID', confidence: 'high', source: 'vocab-indonesian' };
+    }
+
+    // 3. Token frequency matching across comprehensive stopwords
+    const cleanLower = clean.toLowerCase();
+    const words = cleanLower.split(/[\s,.;:!?_()\-\[\]/\\"'<>+=0-9]+/);
+    const wordSet = new Set(words);
+
+    let bestLang = null;
+    let maxHits = 0;
+
+    for (const [lang, swList] of Object.entries(STOPWORDS)) {
+      let hits = 0;
+      for (const sw of swList) {
+        if (wordSet.has(sw)) {
+          hits += sw.length >= 4 ? 3 : 1;
+        }
+      }
+      if (hits > maxHits) {
+        maxHits = hits;
+        bestLang = lang;
+      }
+    }
+
+    if (bestLang && maxHits >= 2) {
+      return {
+        code: bestLang,
+        locale: I18N_LOCALE_MAP[bestLang] || bestLang,
+        confidence: maxHits >= 4 ? 'high' : 'medium',
+        source: 'stopwords'
+      };
+    }
+
+    // 4. Chinese Character Check (Evaluated only after Latin/Cyrillic checks to prevent false-positives on overseas banners with Chinese disclaimers)
+    const cjkMatches = clean.match(/[\u4E00-\u9FFF]/g) || [];
+    const cjkCount = cjkMatches.length;
+    if (cjkCount > 0) {
+      if (/[們這為與會對發點讓國個從經時現動進註冊體獲無關聯開電腦線購資訊頁面]/.test(clean)) {
+        return { code: 'zh-TW', locale: 'zh-TW', confidence: 'high', source: 'script-traditional-chinese' };
+      }
+      return { code: 'zh-CN', locale: 'zh-CN', confidence: 'high', source: 'script-simplified-chinese' };
+    }
+
+    // If node name had a lower confidence match, fallback to it
+    if (fromName) return fromName;
+
+    return { code: 'en', locale: 'en-US', confidence: 'low', source: 'default' };
   }
 };
 
@@ -1348,7 +1838,11 @@ function revertActiveColorPreview() {
   }
   for (const [nodeId, original] of OriginalColorState.entries()) {
     try {
-      const node = figma.getNodeById(nodeId);
+      let node = null;
+      try { node = figma.getNodeById(nodeId); } catch (e) {}
+      if (!node) {
+        try { node = figma.currentPage.findOne(n => n.id === nodeId); } catch (e) {}
+      }
       if (node && !node.removed) {
         if ('fills' in node && Array.isArray(original.fills)) {
           node.fills = original.fills;
@@ -2633,8 +3127,10 @@ const Handlers = {
           clone.y = ref.y + ref.height + (scheme.spacing || 100);
         }
         
-        // 首页 - 英文 - English
-        clone.name = `${node.name} - ${langObj.name} - ${langObj.en}`;
+        // Format cloned artboard name according to scheme.namingPattern
+        clone.name = formatArtboardName(scheme.namingPattern, node.name, langObj);
+        clone.setPluginData('volc_locale', langObj.locale || langCode);
+        clone.setPluginData('volc_lang_code', langCode);
         
         lastPositions.set(node.id, clone);
         allClones.push(clone);
@@ -2729,6 +3225,190 @@ const Handlers = {
       type: 'task/completed',
       requestId,
       payload: { taskId: requestId, message: `已撤回` },
+    });
+    sendToUI({ type: 'selection/changed', requestId, payload: SelectionEngine.scan() });
+  },
+
+  'artboards/detect-languages': async (requestId, payload) => {
+    const { pattern = '{locale}' } = payload || {};
+    const selection = figma.currentPage.selection || [];
+    let targets = [];
+
+    for (const node of selection) {
+      if (node.type === 'SECTION' && 'children' in node) {
+        // Only if user selected a SECTION container, take its immediate child artboards
+        const frameChildren = node.children.filter(n => 
+          n.type === 'FRAME' || n.type === 'COMPONENT' || n.type === 'COMPONENT_SET' || n.type === 'INSTANCE'
+        );
+        if (frameChildren.length > 0) {
+          targets.push(...frameChildren);
+        } else {
+          targets.push(node);
+        }
+      } else if (node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'COMPONENT_SET' || node.type === 'INSTANCE' || node.type === 'GROUP') {
+        // The user explicitly selected this artboard: ONLY rename this node! Do not unpack inner layers!
+        targets.push(node);
+      }
+    }
+
+    if (targets.length === 0) {
+      // If user selected an inner child layer (text, shape), find its top-level artboard
+      const parentFrames = new Set();
+      for (const node of selection) {
+        let curr = node;
+        while (curr && curr.parent && curr.parent.type !== 'PAGE') {
+          if (curr.parent.type === 'SECTION') break;
+          curr = curr.parent;
+        }
+        if (curr && (curr.type === 'FRAME' || curr.type === 'SECTION' || curr.type === 'COMPONENT' || curr.type === 'COMPONENT_SET' || curr.type === 'INSTANCE' || curr.type === 'GROUP')) {
+          parentFrames.add(curr);
+        }
+      }
+      targets = Array.from(parentFrames);
+    }
+
+    if (targets.length === 0) {
+      sendToUI({
+        type: 'artboards/languages-detected',
+        requestId,
+        payload: { error: '未选中画板', artboards: [] }
+      });
+      return;
+    }
+
+    // Sort artboards in natural visual reading order: top-to-bottom, left-to-right
+    const sortedTargets = LayoutEngine.sortByVisualOrder(targets);
+
+    const detectedList = [];
+    for (let i = 0; i < sortedTargets.length; i++) {
+      const artboard = sortedTargets[i];
+      const pluginDataLocale = artboard.getPluginData('volc_locale') || '';
+
+      // Gather ALL text inside artboard with font sizes
+      const textItems = [];
+      function walk(n) {
+        if (n.visible === false) return;
+        if (n.type === 'TEXT' && n.characters) {
+          const t = n.characters.trim();
+          if (t && !/^[\d\s.,:;!?%$\/()\-+*#@€£¥₹]+$/.test(t)) {
+            let fontSize = 12;
+            try {
+              if (typeof n.fontSize === 'number') fontSize = n.fontSize;
+              else if (typeof n.getRangeFontSize === 'function') fontSize = n.getRangeFontSize(0, 1) || 12;
+            } catch (e) {}
+            textItems.push({ text: t, fontSize });
+          }
+        }
+        if ('children' in n) {
+          for (const c of n.children) walk(c);
+        }
+      }
+      walk(artboard);
+
+      // Sort by font size descending so headlines/titles appear first
+      textItems.sort((a, b) => (b.fontSize || 0) - (a.fontSize || 0));
+      const prominentTexts = textItems.slice(0, 10).map(item => item.text);
+      // Combine ALL text layers to provide complete linguistic context
+      const combinedText = textItems.map(item => item.text).join(' ');
+
+      let detectResult = null;
+      if (pluginDataLocale && I18N_LOCALE_MAP[pluginDataLocale]) {
+        const stdLoc = I18N_LOCALE_MAP[pluginDataLocale];
+        detectResult = {
+          code: stdLoc.split('-')[0],
+          locale: stdLoc,
+          confidence: 'high',
+          source: 'plugin-data'
+        };
+      } else {
+        detectResult = LanguageDetector.detect(combinedText, artboard.name);
+      }
+
+      const locale = detectResult.locale;
+      const code = detectResult.code;
+      const langName = I18N_LANGUAGE_NAMES[locale] || locale;
+      const flag = I18N_LANGUAGE_FLAGS[locale] || '🌐';
+
+      const previewName = formatArtboardName(pattern, artboard.name, {
+        code,
+        locale,
+        name: langName,
+        en: locale
+      });
+
+      detectedList.push({
+        id: artboard.id,
+        originalName: artboard.name,
+        previewName,
+        code,
+        locale,
+        langName,
+        flag,
+        confidence: detectResult.confidence,
+        source: detectResult.source || 'text',
+        sampleText: combinedText.slice(0, 150),
+        prominentTexts,
+        pluginDataLocale,
+        textCount: textItems.length
+      });
+    }
+
+    sendToUI({
+      type: 'artboards/languages-detected',
+      requestId,
+      payload: {
+        artboards: detectedList,
+        pattern
+      }
+    });
+  },
+
+  'artboards/apply-locales-rename': async (requestId, payload) => {
+    const { renames = [] } = payload || {};
+    let renamedCount = 0;
+    for (const item of renames) {
+      try {
+        let node = null;
+        if (typeof figma.getNodeByIdAsync === 'function') {
+          node = await figma.getNodeByIdAsync(item.id);
+        }
+        if (!node && typeof figma.getNodeById === 'function') {
+          try {
+            node = figma.getNodeById(item.id);
+          } catch (e) {}
+        }
+        if (!node) {
+          try {
+            node = (figma.currentPage.selection || []).find(n => n.id === item.id);
+          } catch (e) {}
+        }
+        if (!node) {
+          try {
+            node = figma.currentPage.findOne(n => n.id === item.id);
+          } catch (e) {}
+        }
+
+        if (node && item.newName && typeof item.newName === 'string') {
+          node.name = item.newName.trim();
+          renamedCount++;
+        } else {
+          console.warn(`[Artboard Rename] Node not found or invalid newName for item:`, item);
+        }
+      } catch (err) {
+        console.warn(`[Artboard Rename] Error renaming node ${item.id}:`, err);
+      }
+    }
+
+    if (renamedCount > 0) {
+      figma.notify(`✅ 成功重命名 ${renamedCount} 个画板`);
+    } else {
+      figma.notify(`⚠️ 未能重命名画板 (未找到对应图层)`, { error: true });
+    }
+
+    sendToUI({
+      type: 'artboards/rename-completed',
+      requestId,
+      payload: { renamedCount, total: renames.length }
     });
     sendToUI({ type: 'selection/changed', requestId, payload: SelectionEngine.scan() });
   },

@@ -271,33 +271,27 @@
     <div class="container">
       <div class="section-header">
         <span class="section-tag">Version Updates</span>
-        <h2 class="section-title">📢 最近更新 · v1.1.4 版本动态</h2>
-        <p class="section-desc">解决批量数据填充时行号与文本随行数增多逐行下沉脱节、十位数以上显眼错位痛点：像素级锁定统一基线、长文本折行倍数对齐、百行自适应动态宽度与防误选交互保护。</p>
+        <h2 class="section-title">📢 最近更新 · v1.1.5 版本动态</h2>
+        <p class="section-desc">解决翻译回中文等语言时机器翻译吞掉数字前后空格、以及画板批量重命名只能死板套用几个固定格式的痛点：新增数字与数据空格跨语言无损保护，画板重命名升级为 AI 格式自适应与任意意图分析。</p>
       </div>
 
       <div class="changelog-grid">
         <div class="changelog-card">
-          <div class="changelog-badge badge-feature">🎯 像素级基线锁定</div>
-          <h3 class="changelog-title">行号与文本像素级基线锁定</h3>
-          <p class="changelog-desc">解决之前 16.5px 非整数行高导致浏览器舍入误差累积、10 行以上数字下沉错位痛点。收益：统一锁定 18px 整数像素基线，无论单行还是数十行、数百行数据，每一行行号与右侧内容严丝合缝、完全对齐，零像素漂移。</p>
+          <div class="changelog-badge badge-feature">🛡️ 数字空格跨语言保护</div>
+          <h3 class="changelog-title">数字与数据前后空格完整保护</h3>
+          <p class="changelog-desc">解决之前包含数字与西文空格的文本（如 100 、共 100 件、满 200 减 30）翻译为中文时被机器翻译强行吞掉空格的通病。收益：无论是纯文本还是富文本图层，自动对齐原文中数字、金额、百分比、度量前后的空格特征，翻译为任意语言（包括中文）均能无损保留中西文间距与盘古排版规范。</p>
         </div>
 
         <div class="changelog-card">
-          <div class="changelog-badge badge-feature">📏 宽幅动态自适应</div>
-          <h3 class="changelog-title">十位/百位行号列自适应拓宽</h3>
-          <p class="changelog-desc">解决大批量数据填充时 26px 行号列过窄、十位数紧贴分割线甚至百位数被裁剪痛点。收益：行号槽位升级为动态宽度自适应与等宽数字排版（tabular-nums），增加安全右呼吸间距，支持 100+ 行大表格数据清晰呈现。</p>
+          <div class="changelog-badge badge-feature">🤖 画板智能格式分析</div>
+          <h3 class="changelog-title">多语言画板重命名 AI 意图自适应</h3>
+          <p class="changelog-desc">解决之前只能死板选择 3~4 个固定变量模板、无法随心所欲表达命名想法的痛点。收益：输入框支持输入任意想法或自然语言（如 画板名_中文语种、en_画板原名、Banner-ar），0ms 本地预解析 + AI 深度分析即时推导所有画板的实时命名并一键批量更新。</p>
         </div>
 
         <div class="changelog-card">
-          <div class="changelog-badge badge-opt">🛡️ 智能折行对齐</div>
-          <h3 class="changelog-title">长文本多行折行倍数智能映射</h3>
-          <p class="changelog-desc">解决超长文本在输入框内自然折行时行号无法精准对应行首痛点。收益：测量算法升级为严格整数倍数换算（lineCount * 18px），单行占 18px、双行占 36px，折行段落下方的序号实时无缝吸附。</p>
-        </div>
-
-        <div class="changelog-card">
-          <div class="changelog-badge badge-fix">🚫 文本交互防误选</div>
-          <h3 class="changelog-title">行号区域防框选与防拖拽保护</h3>
-          <p class="changelog-desc">解决在编辑框内鼠标快速全选文本时误选左侧数字的痛点。收益：增加 user-select: none; pointer-events: none;，设计师复制或拖拽文本内容时丝滑专注，绝不带出多余行标。</p>
+          <div class="changelog-badge badge-opt">🪟 极简轻量抽屉交互</div>
+          <h3 class="changelog-title">自定义模式交互全面精简</h3>
+          <p class="changelog-desc">解决之前自定义抽屉偶发被误重置关闭、小字标签杂乱产生视觉负担的体验痛点。收益：彻底移除多余的灵感小字杂音，保留纯粹的「格式输入框 + ✨ AI分析 + 实时效果条」，操作聚焦高效，点击自定义抽屉稳定展开。</p>
         </div>
         <div class="changelog-card">
           <div class="changelog-badge badge-feature">🎛️ 工作台模块自选与排序</div>

@@ -448,6 +448,18 @@
     .btn-primary:active:not(:disabled) {
       transform: translateY(1px);
     }
+    .btn-success {
+      background-color: #059669;
+      color: #FFFFFF;
+      border-color: #047857;
+      box-shadow: 0 2px #065F46, 0 3px 6px rgba(5, 150, 105, 0.25);
+    }
+    .btn-success:hover:not(:disabled) {
+      background-color: #047857;
+    }
+    .btn-success:active:not(:disabled) {
+      transform: translateY(1px);
+    }
     .btn-secondary {
       background-color: var(--bg-surface);
       color: var(--text-main);
@@ -1451,6 +1463,144 @@
     .modal-list-item:hover { background: var(--bg-hover); }
     .modal-list-item.selected { background: transparent; }
 
+    /* --- ARTBOARD RENAME MODAL: MINIMALIST & SPACIOUS DESIGN --- */
+    .artboard-segmented-control {
+      display: flex;
+      background: var(--bg-deck, #FAF8F4);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle, #ECE6DC);
+      gap: 2px;
+    }
+    .segment-btn {
+      flex: 1;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--text-sub, #6E675C);
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .segment-btn:hover {
+      color: var(--text-main, #1D1A16);
+      background: var(--bg-hover, #F0ECE4);
+    }
+    .segment-btn.active {
+      background: var(--bg-surface, #FFFFFF);
+      color: var(--accent-primary, #FF5500);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    body.theme-dark .artboard-segmented-control {
+      background: #151720;
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    body.theme-dark .segment-btn {
+      color: #8E92A2;
+    }
+    body.theme-dark .segment-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #F4F4F6;
+    }
+    body.theme-dark .segment-btn.active {
+      background: #252836;
+      color: #FFAA55;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Single-Row Artboard Items (Calm & Spacious) */
+    .artboard-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+    .artboard-row:hover {
+      background: var(--bg-deck, #FAF8F4);
+      border-color: var(--border-subtle, #ECE6DC);
+    }
+    body.theme-dark .artboard-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+    .artboard-row-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      overflow: hidden;
+      flex: 1;
+      min-width: 0;
+    }
+    .artboard-idx {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      width: 18px;
+      flex-shrink: 0;
+    }
+    .artboard-orig-name {
+      font-size: 11.5px;
+      color: var(--text-sub);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 95px;
+    }
+    .artboard-arrow {
+      font-size: 10px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .artboard-target-name {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--accent-primary, #FF5500);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .artboard-target-name.renamed {
+      color: #059669;
+    }
+    .artboard-row-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .artboard-lang-select {
+      height: 24px;
+      padding: 0 6px;
+      font-size: 10.5px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      color: var(--text-main);
+      cursor: pointer;
+      max-width: 130px;
+      outline: none;
+    }
+    .artboard-lang-select:hover {
+      border-color: var(--border-deck);
+    }
+    body.theme-dark .artboard-lang-select {
+      background: #171922;
+      border-color: rgba(255, 255, 255, 0.1);
+      color: #F4F4F6;
+    }
+
     .remove-lang-btn {
       position: absolute;
       top: -6px;
@@ -1519,7 +1669,7 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
       </div>
-      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.4</span></div>
+      <div class="bottom-brand">VolcBox <span id="plugin-version">v1.1.5</span></div>
     </footer>
   </div>
 
@@ -1539,6 +1689,81 @@
     </div>
   </div>
 
+  <!-- ARTBOARD LOCALE RENAMER MODAL -->
+  <div id="artboard-locale-modal" class="modal-overlay" style="display: none; z-index: 1000;" onclick="if(event.target === this) closeArtboardLocaleModal()">
+    <div class="modal-content" style="width: calc(100% - 24px); max-width: 350px; max-height: 85vh; display: flex; flex-direction: column;">
+      
+      <!-- Modal Header: Quiet, Spacious -->
+      <div class="modal-header" style="padding: 12px 16px; border-bottom: 1px solid var(--border-subtle);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--text-main);">画板重命名</span>
+          <span id="artboard-detected-count-badge" style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); font-weight: 500;">(0)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <button class="modal-close" style="font-size: 14px; padding: 4px; display: flex; align-items: center; justify-content: center;" onclick="closeArtboardLocaleModal()">✕</button>
+        </div>
+      </div>
+
+      <!-- Model & Status Strip + Re-identify button -->
+      <div style="padding: 6px 16px; background: var(--bg-deck); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; font-size: 10.5px;">
+        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+          <span id="artboard-ai-status-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10B981; flex-shrink: 0;"></span>
+          <span id="artboard-api-name" style="font-weight: 600; color: var(--text-main); font-size: 11px; white-space: nowrap;">DeepSeek AI</span>
+          <span id="artboard-api-status" style="color: var(--text-muted); font-size: 10px; white-space: nowrap;">· 就绪</span>
+        </div>
+        <button type="button" class="btn btn-secondary" style="height: 22px; padding: 0 8px; font-size: 10px; border-radius: 4px; display: flex; align-items: center; gap: 4px;" onclick="reidentifyArtboards()" title="重新扫描并识别画布当前选中的画板">
+          <span>🔄 重新识别</span>
+        </button>
+      </div>
+
+      <!-- Segmented Control Format Bar (Clean & Quiet) -->
+      <div style="padding: 12px 16px 8px; background: var(--bg-surface); display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-subtle);">
+        <div class="artboard-segmented-control">
+          <button type="button" class="segment-btn active" data-format="{locale}" onclick="selectArtboardPreset('{locale}')">语言代码</button>
+          <button type="button" class="segment-btn" data-format="{name}_{locale}" onclick="selectArtboardPreset('{name}_{locale}')">原名+代码</button>
+          <button type="button" class="segment-btn" data-format="{name_cn}" onclick="selectArtboardPreset('{name_cn}')">中文名</button>
+          <button type="button" class="segment-btn" data-format="custom" onclick="selectArtboardPreset('custom')">自定义</button>
+        </div>
+
+        <!-- Custom Format Drawer (Appears only on "自定义") -->
+        <div id="artboard-custom-format-box" style="display: none; flex-direction: column; gap: 6px; padding-top: 4px;">
+          <!-- Format Input with AI Analyze & Reset Buttons -->
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="text" class="input-box" id="artboard-rename-format-input" value="{name}_{locale}" placeholder="输入任意命名格式或提示词，如: 画板名_中文语种" oninput="onArtboardFormatInput(this.value)" onkeydown="if(event.key==='Enter') runAiFormatAnalysis(true)" style="height: 28px; font-size: 11px; font-family: var(--font-mono); flex: 1;" />
+            <button type="button" class="btn btn-secondary" id="btn-artboard-ai-analyze" style="height: 28px; padding: 0 8px; font-size: 10.5px; flex-shrink: 0; display: flex; align-items: center; gap: 3px; font-weight: 500;" onclick="runAiFormatAnalysis(true)" title="立即请求 AI 分析格式意图并更新实时效果">
+              <span>✨ AI分析</span>
+            </button>
+            <button type="button" class="btn btn-secondary" style="height: 28px; padding: 0 8px; font-size: 10px; flex-shrink: 0;" onclick="resetCustomArtboardFormat()" title="重置为默认格式">重置</button>
+          </div>
+
+          <!-- Real-time Result Preview Strip with AI Indicator -->
+          <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-deck); padding: 5px 8px; border-radius: 4px; border: 1px solid var(--border-subtle); font-size: 10px;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="color: var(--text-muted);">实时效果:</span>
+              <span id="artboard-custom-ai-badge" style="display: inline-flex; align-items: center; gap: 3px; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: rgba(79, 70, 229, 0.08); color: #4F46E5; font-weight: 500;">
+                <span>🤖 AI智能分析</span>
+              </span>
+            </div>
+            <span id="artboard-custom-preview-example" style="font-weight: 600; color: var(--accent-primary); font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">Frame_ar-AR</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Artboards List: Generous Whitespace, 1 Row per Artboard -->
+      <div id="artboard-detected-list" class="modal-list" style="padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto;">
+        <!-- Dynamically rendered via JS -->
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar" style="margin: 0; padding: 12px 16px; border-top: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; gap: 10px;">
+        <button class="btn btn-secondary" style="width: auto; padding: 0 16px; height: 32px; font-size: 12px;" onclick="closeArtboardLocaleModal()">关闭</button>
+        <button class="btn btn-primary" id="btn-apply-artboard-renames" style="flex: 1; height: 32px; font-size: 12px; font-weight: 600;" onclick="applyArtboardLocaleRenames()">
+          ✨ 一键重命名
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONTEXT MENU -->
   <div id="preset-context-menu" style="display: none; position: fixed; z-index: 9999; background: #FFF; border: 1px solid var(--border-deck); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px; min-width: 120px;">
     <div style="padding: 6px 12px; font-size: 11px; cursor: pointer; color: var(--text-main); border-radius: 4px;" onclick="handlePresetContextMenu('edit')" onmouseover="this.style.background='#F5F5F5'" onmouseout="this.style.background='transparent'">设置预设</div>
@@ -1554,55 +1779,96 @@
     // FULL LANGUAGE LIBRARY (40+ Languages)
     // =====================================================================
     const ALL_LANGUAGES = [
-      { code: 'zh-CN', name: '简体中文', flag: '🇨🇳', en: 'Chinese (Simplified)' },
-      { code: 'zh-TW', name: '繁體中文', flag: '🇭🇰', en: 'Chinese (Traditional)' },
-      { code: 'en', name: '英语', flag: '🇺🇸', en: 'English' },
-      { code: 'ja', name: '日语', flag: '🇯🇵', en: 'Japanese' },
-      { code: 'ko', name: '韩语', flag: '🇰🇷', en: 'Korean' },
-      { code: 'fr', name: '法语', flag: '🇫🇷', en: 'French' },
-      { code: 'de', name: '德语', flag: '🇩🇪', en: 'German' },
-      { code: 'es', name: '西班牙语', flag: '🇪🇸', en: 'Spanish' },
-      { code: 'pt', name: '葡萄牙语', flag: '🇵🇹', en: 'Portuguese' },
-      { code: 'pt-BR', name: '巴西葡语', flag: '🇧🇷', en: 'Portuguese (BR)' },
-      { code: 'ru', name: '俄语', flag: '🇷🇺', en: 'Russian' },
-      { code: 'it', name: '意大利语', flag: '🇮🇹', en: 'Italian' },
-      { code: 'nl', name: '荷兰语', flag: '🇳🇱', en: 'Dutch' },
-      { code: 'pl', name: '波兰语', flag: '🇵🇱', en: 'Polish' },
-      { code: 'sv', name: '瑞典语', flag: '🇸🇪', en: 'Swedish' },
-      { code: 'da', name: '丹麦语', flag: '🇩🇰', en: 'Danish' },
-      { code: 'no', name: '挪威语', flag: '🇳🇴', en: 'Norwegian' },
-      { code: 'fi', name: '芬兰语', flag: '🇫🇮', en: 'Finnish' },
-      { code: 'cs', name: '捷克语', flag: '🇨🇿', en: 'Czech' },
-      { code: 'hu', name: '匈牙利语', flag: '🇭🇺', en: 'Hungarian' },
-      { code: 'ro', name: '罗马尼亚语', flag: '🇷🇴', en: 'Romanian' },
-      { code: 'el', name: '希腊语', flag: '🇬🇷', en: 'Greek' },
-      { code: 'tr', name: '土耳其语', flag: '🇹🇷', en: 'Turkish' },
-      { code: 'ar', name: '阿拉伯语', flag: '🇸🇦', en: 'Arabic' },
-      { code: 'he', name: '希伯来语', flag: '🇮🇱', en: 'Hebrew' },
-      { code: 'th', name: '泰语', flag: '🇹🇭', en: 'Thai' },
-      { code: 'vi', name: '越南语', flag: '🇻🇳', en: 'Vietnamese' },
-      { code: 'id', name: '印尼语', flag: '🇮🇩', en: 'Indonesian' },
-      { code: 'ms', name: '马来语', flag: '🇲🇾', en: 'Malay' },
-      { code: 'tl', name: '菲律宾语', flag: '🇵🇭', en: 'Filipino' },
-      { code: 'hi', name: '印地语', flag: '🇮🇳', en: 'Hindi' },
-      { code: 'bn', name: '孟加拉语', flag: '🇧🇩', en: 'Bengali' },
-      { code: 'ur', name: '乌尔都语', flag: '🇵🇰', en: 'Urdu' },
-      { code: 'uk', name: '乌克兰语', flag: '🇺🇦', en: 'Ukrainian' },
-      { code: 'bg', name: '保加利亚语', flag: '🇧🇬', en: 'Bulgarian' },
-      { code: 'hr', name: '克罗地亚语', flag: '🇭🇷', en: 'Croatian' },
-      { code: 'sk', name: '斯洛伐克语', flag: '🇸🇰', en: 'Slovak' },
-      { code: 'lt', name: '立陶宛语', flag: '🇱🇹', en: 'Lithuanian' },
-      { code: 'lv', name: '拉脱维亚语', flag: '🇱🇻', en: 'Latvian' },
-      { code: 'et', name: '爱沙尼亚语', flag: '🇪🇪', en: 'Estonian' },
-      { code: 'sl', name: '斯洛文尼亚语', flag: '🇸🇮', en: 'Slovenian' },
-      { code: 'sw', name: '斯瓦希里语', flag: '🇰🇪', en: 'Swahili' },
-      { code: 'af', name: '南非荷兰语', flag: '🇿🇦', en: 'Afrikaans' },
-      { code: 'ca', name: '加泰罗尼亚语', flag: '🏴', en: 'Catalan' },
-      { code: 'fa', name: '波斯语', flag: '🇮🇷', en: 'Persian' },
-      { code: 'mn', name: '蒙古语', flag: '🇲🇳', en: 'Mongolian' },
-      { code: 'my', name: '缅甸语', flag: '🇲🇲', en: 'Burmese' },
-      { code: 'km', name: '高棉语', flag: '🇰🇭', en: 'Khmer' },
+      { code: 'zh-CN', name: '简体中文', flag: '🇨🇳', en: 'Chinese (Simplified)', locale: 'zh-CN' },
+      { code: 'zh-TW', name: '繁體中文', flag: '🇭🇰', en: 'Chinese (Traditional)', locale: 'zh-TW' },
+      { code: 'en', name: '英语', flag: '🇺🇸', en: 'English', locale: 'en-US' },
+      { code: 'ja', name: '日语', flag: '🇯🇵', en: 'Japanese', locale: 'ja-JP' },
+      { code: 'ko', name: '韩语', flag: '🇰🇷', en: 'Korean', locale: 'ko-KR' },
+      { code: 'fr', name: '法语', flag: '🇫🇷', en: 'French', locale: 'fr-FR' },
+      { code: 'de', name: '德语', flag: '🇩🇪', en: 'German', locale: 'de-DE' },
+      { code: 'es', name: '西班牙语', flag: '🇪🇸', en: 'Spanish', locale: 'es-ES' },
+      { code: 'pt', name: '葡萄牙语', flag: '🇵🇹', en: 'Portuguese', locale: 'pt-PT' },
+      { code: 'pt-BR', name: '巴西葡语', flag: '🇧🇷', en: 'Portuguese (BR)', locale: 'pt-BR' },
+      { code: 'ru', name: '俄语', flag: '🇷🇺', en: 'Russian', locale: 'ru-RU' },
+      { code: 'it', name: '意大利语', flag: '🇮🇹', en: 'Italian', locale: 'it-IT' },
+      { code: 'nl', name: '荷兰语', flag: '🇳🇱', en: 'Dutch', locale: 'nl-NL' },
+      { code: 'pl', name: '波兰语', flag: '🇵🇱', en: 'Polish', locale: 'pl-PL' },
+      { code: 'sv', name: '瑞典语', flag: '🇸🇪', en: 'Swedish', locale: 'sv-SE' },
+      { code: 'da', name: '丹麦语', flag: '🇩🇰', en: 'Danish', locale: 'da-DK' },
+      { code: 'no', name: '挪威语', flag: '🇳🇴', en: 'Norwegian', locale: 'no-NO' },
+      { code: 'fi', name: '芬兰语', flag: '🇫🇮', en: 'Finnish', locale: 'fi-FI' },
+      { code: 'cs', name: '捷克语', flag: '🇨🇿', en: 'Czech', locale: 'cs-CZ' },
+      { code: 'hu', name: '匈牙利语', flag: '🇭🇺', en: 'Hungarian', locale: 'hu-HU' },
+      { code: 'ro', name: '罗马尼亚语', flag: '🇷🇴', en: 'Romanian', locale: 'ro-RO' },
+      { code: 'el', name: '希腊语', flag: '🇬🇷', en: 'Greek', locale: 'el-GR' },
+      { code: 'tr', name: '土耳其语', flag: '🇹🇷', en: 'Turkish', locale: 'tr-TR' },
+      { code: 'ar', name: '阿拉伯语', flag: '🇸🇦', en: 'Arabic', locale: 'ar-AR' },
+      { code: 'he', name: '希伯来语', flag: '🇮🇱', en: 'Hebrew', locale: 'he-IL' },
+      { code: 'th', name: '泰语', flag: '🇹🇭', en: 'Thai', locale: 'th-TH' },
+      { code: 'vi', name: '越南语', flag: '🇻🇳', en: 'Vietnamese', locale: 'vi-VN' },
+      { code: 'id', name: '印尼语', flag: '🇮🇩', en: 'Indonesian', locale: 'in-ID' },
+      { code: 'ms', name: '马来语', flag: '🇲🇾', en: 'Malay', locale: 'ms-MY' },
+      { code: 'tl', name: '菲律宾语', flag: '🇵🇭', en: 'Filipino', locale: 'tl-PH' },
+      { code: 'hi', name: '印地语', flag: '🇮🇳', en: 'Hindi', locale: 'hi-IN' },
+      { code: 'bn', name: '孟加拉语', flag: '🇧🇩', en: 'Bengali', locale: 'bn-BD' },
+      { code: 'ur', name: '乌尔都语', flag: '🇵🇰', en: 'Urdu', locale: 'ur-PK' },
+      { code: 'uk', name: '乌克兰语', flag: '🇺🇦', en: 'Ukrainian', locale: 'uk-UA' },
+      { code: 'bg', name: '保加利亚语', flag: '🇧🇬', en: 'Bulgarian', locale: 'bg-BG' },
+      { code: 'hr', name: '克罗地亚语', flag: '🇭🇷', en: 'Croatian', locale: 'hr-HR' },
+      { code: 'sk', name: '斯洛伐克语', flag: '🇸🇰', en: 'Slovak', locale: 'sk-SK' },
+      { code: 'lt', name: '立陶宛语', flag: '🇱🇹', en: 'Lithuanian', locale: 'lt-LT' },
+      { code: 'lv', name: '拉脱维亚语', flag: '🇱🇻', en: 'Latvian', locale: 'lv-LV' },
+      { code: 'et', name: '爱沙尼亚语', flag: '🇪🇪', en: 'Estonian', locale: 'et-EE' },
+      { code: 'sl', name: '斯洛文尼亚语', flag: '🇸🇮', en: 'Slovenian', locale: 'sl-SI' },
+      { code: 'is', name: '冰岛语', flag: '🇮🇸', en: 'Icelandic', locale: 'is-IS' },
+      { code: 'ga', name: '爱尔兰语', flag: '🇮🇪', en: 'Irish', locale: 'ga-IE' },
+      { code: 'sr', name: '塞尔维亚语', flag: '🇷🇸', en: 'Serbian', locale: 'sr-RS' },
+      { code: 'sw', name: '斯瓦希里语', flag: '🇰🇪', en: 'Swahili', locale: 'sw-KE' },
+      { code: 'af', name: '南非荷兰语', flag: '🇿🇦', en: 'Afrikaans', locale: 'af-ZA' },
+      { code: 'ca', name: '加泰罗尼亚语', flag: '🏴', en: 'Catalan', locale: 'ca-ES' },
+      { code: 'fa', name: '波斯语', flag: '🇮🇷', en: 'Persian', locale: 'fa-IR' },
+      { code: 'mn', name: '蒙古语', flag: '🇲🇳', en: 'Mongolian', locale: 'mn-MN' },
+      { code: 'my', name: '缅甸语', flag: '🇲🇲', en: 'Burmese', locale: 'my-MM' },
+      { code: 'km', name: '高棉语', flag: '🇰🇭', en: 'Khmer', locale: 'km-KH' },
     ];
+
+    const I18N_LOCALE_MAP = {
+      'zh': 'zh-CN', 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW',
+      'zh-hans': 'zh-CN', 'zh-hant': 'zh-TW', 'hans': 'zh-CN', 'hant': 'zh-TW',
+      'en': 'en-US', 'en-us': 'en-US', 'es': 'es-ES', 'es-es': 'es-ES',
+      'de': 'de-DE', 'de-de': 'de-DE', 'fr': 'fr-FR', 'fr-fr': 'fr-FR',
+      'cs': 'cs-CZ', 'cs-cz': 'cs-CZ', 'bg': 'bg-BG', 'bg-bg': 'bg-BG',
+      'fi': 'fi-FI', 'fi-fi': 'fi-FI', 'lt': 'lt-LT', 'lt-lt': 'lt-LT',
+      'is': 'is-IS', 'is-is': 'is-IS', 'ga': 'ga-IE', 'ga-ie': 'ga-IE',
+      'et': 'et-EE', 'et-ee': 'et-EE', 'sl': 'sl-SI', 'sl-si': 'sl-SI',
+      'id': 'in-ID', 'in': 'in-ID', 'id-id': 'in-ID', 'in-id': 'in-ID',
+      'ro': 'ro-RO', 'ro-ro': 'ro-RO', 'pt': 'pt-PT', 'pt-pt': 'pt-PT',
+      'pt-br': 'pt-BR', 'pt-BR': 'pt-BR', 'it': 'it-IT', 'it-it': 'it-IT',
+      'vi': 'vi-VN', 'vi-vn': 'vi-VN', 'nl': 'nl-NL', 'nl-nl': 'nl-NL',
+      'ko': 'ko-KR', 'ko-kr': 'ko-KR', 'hi': 'hi-IN', 'hi-in': 'hi-IN',
+      'ja': 'ja-JP', 'ja-jp': 'ja-JP', 'ar': 'ar-AR', 'ar-ar': 'ar-AR',
+      'ru': 'ru-RU', 'ru-ru': 'ru-RU', 'pl': 'pl-PL', 'pl-pl': 'pl-PL',
+      'ms': 'ms-MY', 'ms-my': 'ms-MY', 'hu': 'hu-HU', 'hu-hu': 'hu-HU',
+      'el': 'el-GR', 'el-gr': 'el-GR', 'sv': 'sv-SE', 'sv-se': 'sv-SE',
+      'sr': 'sr-RS', 'sr-rs': 'sr-RS', 'da': 'da-DK', 'da-dk': 'da-DK',
+      'no': 'no-NO', 'no-no': 'no-NO', 'sk': 'sk-SK', 'sk-sk': 'sk-SK',
+      'hr': 'hr-HR', 'hr-hr': 'hr-HR', 'tr': 'tr-TR', 'tr-tr': 'tr-TR',
+      'uk': 'uk-UA', 'uk-ua': 'uk-UA', 'th': 'th-TH', 'th-th': 'th-TH',
+      'he': 'he-IL', 'he-il': 'he-IL', 'tl': 'tl-PH', 'tl-ph': 'tl-PH',
+      'bn': 'bn-BD', 'bn-bd': 'bn-BD', 'ur': 'ur-PK', 'ur-pk': 'ur-PK',
+      'fa': 'fa-IR', 'fa-ir': 'fa-IR', 'mn': 'mn-MN', 'mn-mn': 'mn-MN',
+      'my': 'my-MM', 'my-mm': 'my-MM', 'km': 'km-KH', 'km-kh': 'km-KH',
+      'lv': 'lv-LV', 'lv-lv': 'lv-LV', 'sw': 'sw-KE', 'sw-ke': 'sw-KE',
+      'af': 'af-ZA', 'af-za': 'af-ZA', 'ca': 'ca-ES', 'ca-es': 'ca-ES'
+    };
+    ALL_LANGUAGES.forEach(l => {
+      if (l.locale) {
+        I18N_LOCALE_MAP[l.code] = l.locale;
+        I18N_LOCALE_MAP[l.code.toLowerCase()] = l.locale;
+        I18N_LOCALE_MAP[l.locale] = l.locale;
+        I18N_LOCALE_MAP[l.locale.toLowerCase()] = l.locale;
+      }
+    });
 
     const DEFAULT_PINNED_CODES = ['en', 'zh-CN', 'ja', 'ko'];
 
@@ -1648,6 +1914,11 @@
       langSearch: '',
       pinnedCodes: [...DEFAULT_PINNED_CODES],
       fillMode: 'sequential',
+      artboardRenameModalVisible: false,
+      detectedArtboards: [],
+      artboardActivePreset: '{locale}',
+      artboardRenamePattern: '{locale}',
+      artboardCustomPattern: '{name}_{locale}',
       fillPrefix: '',
       fillSuffix: '',
       fillLines: ['张伟', '王芳', '李娜', '刘洋', '陈杰', '杨敏', '赵敏', '周强'],
@@ -1791,7 +2062,38 @@
 
     // Language helper functions
     function getLangByCode(code) {
-      return ALL_LANGUAGES.find(l => l.code === code);
+      if (!code) return null;
+      return ALL_LANGUAGES.find(l => l.code === code || l.locale === code);
+    }
+    function getLangByLocale(locale) {
+      if (!locale) return null;
+      return ALL_LANGUAGES.find(l => l.locale === locale || l.code === locale);
+    }
+    function formatArtboardNameUI(pattern, originalName, langObj) {
+      const code = langObj?.code || '';
+      const locale = langObj?.locale || code;
+      const name_cn = langObj?.name || code;
+      const en = langObj?.en || locale;
+      const name = originalName || '';
+
+      if (!pattern) {
+        return `${name} - ${name_cn} - ${en}`;
+      }
+
+      return pattern
+        .replace(/\{locale\}/g, locale)
+        .replace(/\{code\}/g, code)
+        .replace(/\{name\}/g, name)
+        .replace(/\{name_cn\}/g, name_cn)
+        .replace(/\{en\}/g, en);
+    }
+    function getNamingPreview(pattern, originalName = 'Banner_01') {
+      return formatArtboardNameUI(pattern, originalName, {
+        code: 'en',
+        locale: 'en-US',
+        name: '英语',
+        en: 'English'
+      });
     }
     function getPinnedLanguages() {
       return state.pinnedCodes.map(c => getLangByCode(c)).filter(Boolean);
@@ -1800,7 +2102,7 @@
       const q = state.langSearch.toLowerCase().trim();
       if (!q) return ALL_LANGUAGES;
       return ALL_LANGUAGES.filter(l =>
-        l.name.includes(q) || l.en.toLowerCase().includes(q) || l.code.toLowerCase().includes(q)
+        l.name.includes(q) || l.en.toLowerCase().includes(q) || l.code.toLowerCase().includes(q) || (l.locale && l.locale.toLowerCase().includes(q))
       );
     }
     function togglePinLang(code) {
@@ -1846,6 +2148,7 @@
         languages: [],
         direction: 'right',
         spacing: 100,
+        namingPattern: '{locale}',
         scenario: 'auto'
       };
       render();
@@ -1901,9 +2204,15 @@
       
       const enrichedProfile = {
         ...profile,
+        namingPattern: profile.namingPattern || '{locale}',
         languages: profile.languages.map(code => {
            const l = getLangByCode(code);
-           return { code: code, name: l?.name || code, en: l?.en || code };
+           return {
+             code: code,
+             name: l?.name || code,
+             en: l?.en || code,
+             locale: l?.locale || code
+           };
         })
       };
 
@@ -2197,12 +2506,12 @@
           ${UIComponents.SettingGroup(
             UIComponents.SettingRow(
               '数字与数据智能保护',
-              '百分比、金额、股票代码与时间不被篡改',
+              '金额、百分比、数据及数字前后空格跨语言完整保护',
               UIComponents.Switch(state.protectText !== false, 'toggleProtectText(this.checked)')
             ) +
             UIComponents.SettingRow(
               '保留富文本分段样式',
-              '',
+              '多字号、颜色分段样式不被覆盖',
               UIComponents.Switch(state.preserveRichText, 'togglePreserveRichText(this.checked)')
             ) +
             UIComponents.SettingRow(
@@ -2322,6 +2631,22 @@
                 <div style="display: flex; flex-direction: column; gap: 6px;">
                   <label style="font-size: 10.5px; font-weight: 500; color: var(--text-sub);">新画板间距 (px)</label>
                   <input class="input-box" type="number" value="${s.spacing}" oninput="state.editingScheme.spacing = parseInt(this.value) || 0; render();" />
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 10.5px; font-weight: 500; color: var(--text-sub);">画板生成命名规则</label>
+                    <span style="font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);">
+                      示例: <b style="color: var(--accent-primary);">${getNamingPreview(s.namingPattern || '{locale}')}</b>
+                    </span>
+                  </div>
+                  <select class="input-box" style="font-size: 11px;" onchange="state.editingScheme.namingPattern = this.value; render();">
+                    <option value="{locale}" ${(s.namingPattern || '{locale}') === '{locale}' ? 'selected' : ''}>标准语言代码 (如 en-US, ar-AR, in-ID) [推荐·开发直接替换]</option>
+                    <option value="{name}_{locale}" ${s.namingPattern === '{name}_{locale}' ? 'selected' : ''}>原画板名 + 标准代码 (如 Banner_en-US)</option>
+                    <option value="{code}" ${s.namingPattern === '{code}' ? 'selected' : ''}>简写二字码 (如 en, ar, id)</option>
+                    <option value="{name}_{code}" ${s.namingPattern === '{name}_{code}' ? 'selected' : ''}>原画板名 + 简写代码 (如 Banner_en)</option>
+                    <option value="{name} - {name_cn} - {en}" ${s.namingPattern === '{name} - {name_cn} - {en}' ? 'selected' : ''}>完整格式 (如 Banner - 英语 - English)</option>
+                  </select>
                 </div>
               </div>
 
@@ -2824,6 +3149,25 @@
                 <span class="setting-label" style="font-weight: 600;">批量导出所选画板</span>
               </div>
               <button class="btn btn-primary" style="height: 26px; padding: 0 12px; font-size: 11.5px;" onclick="executeBatchExport()" ${(!hasLocal || state.selection.totalSelected === 0) ? 'disabled' : ''} ${!hasLocal ? 'title="需安装并开启本地助手服务"' : ''}>复制</button>
+            </div>
+
+            <div class="setting-row" style="padding: 10px 12px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.28); flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M3.6 9h16.8"/>
+                    <path d="M3.6 15h16.8"/>
+                    <path d="M11.5 3a17 17 0 0 0 0 18"/>
+                    <path d="M12.5 3a17 17 0 0 1 0 18"/>
+                  </svg>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="setting-label" style="font-weight: 600; font-size: 12px; color: var(--text-main);">多语言画板智能重命名</span>
+                  <span style="font-size: 10px; color: var(--text-muted); line-height: 1.3;">智能识别图层名与文案语种，按标准格式批量命名</span>
+                </div>
+              </div>
+              <button class="btn btn-primary" style="height: 28px; padding: 0 14px; font-size: 11.5px; font-weight: 600;" onclick="openArtboardLocaleRenamer()" ${state.selection.totalSelected === 0 ? 'disabled' : ''}>识别</button>
             </div>
 
             <div class="setting-row">
@@ -4712,6 +5056,13 @@ echo "=========================================="
       if (!state.settings.customLlm) state.settings.customLlm = {};
       state.settings.customLlm[field] = value;
       state.settings.customLlm.testResult = '';
+      if (field === 'apiKey') {
+        if (value && value.trim()) {
+          state.settings.activeProviderId = 'custom-llm';
+        } else {
+          state.settings.activeProviderId = 'free-fast';
+        }
+      }
       savePluginState();
     };
 
@@ -4730,46 +5081,58 @@ echo "=========================================="
         return;
       }
 
+      const preset = custom.preset || 'deepseek';
+      const prov = LLM_PROVIDERS[preset] || LLM_PROVIDERS.deepseek;
+      const model = (custom.model && custom.model.trim()) || prov.defaultModel || 'deepseek-chat';
+      const baseUrl = (custom.baseUrl && custom.baseUrl.trim()) || prov.baseUrl || 'https://api.deepseek.com';
+
       if (statusEl) statusEl.innerHTML = '<span style="color: var(--text-sub);">⏳ 正在连接测试中...</span>';
       if (testBtn) { testBtn.disabled = true; testBtn.innerText = '测试中...'; }
 
       try {
-        const cleanBase = (custom.baseUrl || 'https://api.deepseek.com').replace(/\/+$/, '');
+        const cleanBase = baseUrl.replace(/\/+$/, '');
         const url = cleanBase.endsWith('/chat/completions') ? cleanBase : `${cleanBase}/chat/completions`;
         const startTime = Date.now();
 
-        const res = await UITranslationEngine.fetchWithTimeout(url, {
+        const res = await TranslationProviders.fetchWithTimeout(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${custom.apiKey.trim()}`
           },
           body: JSON.stringify({
-            model: custom.model || 'deepseek-chat',
+            model: model,
             messages: [{ role: 'user', content: 'Say OK' }],
             max_tokens: 5,
             temperature: 0.1
           })
-        }, 10000);
+        }, 12000);
 
         const duration = Date.now() - startTime;
         if (res.ok) {
-          const successMsg = `<span style="color: var(--accent-green); font-weight: 600;">✅ 连接成功 (${duration}ms)</span>`;
+          const successMsg = `<span style="color: var(--accent-green); font-weight: 600;">✅ 连接成功 (${duration}ms) · 已激活</span>`;
           state.settings.customLlm.testResult = successMsg;
+          state.settings.activeProviderId = 'custom-llm';
           if (statusEl) statusEl.innerHTML = successMsg;
           savePluginState();
         } else {
           let errDetail = `HTTP ${res.status}`;
           try {
             const errJson = await res.json();
-            errDetail = errJson.error?.message || errJson.message || errDetail;
+            errDetail = errJson.error?.message || errJson.message || errJson.msg || errJson.detail || errDetail;
           } catch(e) {}
-          const failMsg = `<span style="color: var(--accent-red); font-weight: 500;" title="${errDetail}">❌ 失败: ${errDetail.slice(0, 20)}</span>`;
+          const failMsg = `<span style="color: var(--accent-red); font-weight: 500;" title="${errDetail}">❌ 失败 (${res.status}): ${errDetail.slice(0, 30)}</span>`;
           state.settings.customLlm.testResult = failMsg;
           if (statusEl) statusEl.innerHTML = failMsg;
         }
       } catch (err) {
-        const failMsg = `<span style="color: var(--accent-red); font-weight: 500;">❌ 超时或网络异常</span>`;
+        console.error('[LLM Connection Test Error]', err);
+        let failMsg = `<span style="color: var(--accent-red); font-weight: 500;">❌ 网络异常或跨域限制</span>`;
+        if (err.name === 'AbortError') {
+          failMsg = `<span style="color: var(--accent-red); font-weight: 500;">❌ 连接超时 (12秒无响应)</span>`;
+        } else if (err.message && !err.message.includes('fetch')) {
+          failMsg = `<span style="color: var(--accent-red); font-weight: 500;" title="${err.message}">❌ ${err.message.slice(0, 25)}</span>`;
+        }
         state.settings.customLlm.testResult = failMsg;
         if (statusEl) statusEl.innerHTML = failMsg;
       } finally {
@@ -4938,6 +5301,131 @@ echo "=========================================="
         }
 
         return false;
+      },
+
+      /**
+       * Ensures numbers, percentages, currencies, metrics and rich tags
+       * that had whitespace around them in the original text DO NOT lose their
+       * whitespace in the translated text (especially when translating into Chinese
+       * or other CJK languages where MT engines strip all whitespace).
+       */
+      preserveWhitespace(origRaw, transRaw) {
+        if (!origRaw || !transRaw || typeof origRaw !== 'string' || typeof transRaw !== 'string') {
+          return transRaw;
+        }
+
+        let result = transRaw;
+
+        // 1. Preserve Leading and Trailing Whitespace of the entire string
+        const leadingMatch = origRaw.match(/^(\s+)/);
+        const trailingMatch = origRaw.match(/(\s+)$/);
+        const origLeading = leadingMatch ? leadingMatch[1] : '';
+        const origTrailing = trailingMatch ? trailingMatch[1] : '';
+
+        if (origLeading && !result.startsWith(origLeading)) {
+          result = origLeading + result.replace(/^\s*/, '');
+        }
+        if (origTrailing && !result.endsWith(origTrailing)) {
+          result = result.replace(/\s*$/, '') + origTrailing;
+        }
+
+        // 2. Preserve Rich Text Tag Whitespace
+        if (/<s id="\d+">/i.test(origRaw) && /<s id="\d+">/i.test(result)) {
+          result = this.preserveTagWhitespace(origRaw, result);
+        }
+
+        // 3. Preserve Spacing Around Numbers, Percentages, and Metrics
+        result = this.preserveNumberSpacing(origRaw, result);
+
+        return result;
+      },
+
+      preserveNumberSpacing(origRaw, transRaw) {
+        const cleanOrig = origRaw.replace(/<\/?(?:s|span)\b[^>]*>/gi, '');
+        const numRegex = /([+-]?\d+(?:[.,]\d+)*(?:\+|%|％)?)/g;
+        let match;
+        const numSpecs = [];
+
+        while ((match = numRegex.exec(cleanOrig)) !== null) {
+          const numStr = match[1];
+          const startIdx = match.index;
+          const endIdx = startIdx + numStr.length;
+
+          const spaceBefore = startIdx > 0 && /\s/.test(cleanOrig[startIdx - 1]);
+          const spaceAfter = endIdx < cleanOrig.length && /\s/.test(cleanOrig[endIdx]);
+
+          if (spaceBefore || spaceAfter) {
+            numSpecs.push({ num: numStr, spaceBefore, spaceAfter });
+          }
+        }
+
+        if (numSpecs.length === 0) return transRaw;
+
+        let res = transRaw;
+
+        for (const spec of numSpecs) {
+          const escNum = spec.num.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+          if (spec.spaceBefore) {
+            // Plain text: "共100" -> "共 100"
+            const reBeforeChar = new RegExp(`([^\\s<>])(${escNum})`, 'g');
+            res = res.replace(reBeforeChar, '$1 $2');
+
+            // Tagged text: "</s><s id="1">100" -> "</s> <s id="1">100"
+            const reBeforeTag = new RegExp(`(<\\/s>|<\\/span>)(<s\\s+id="\\d+">${escNum})`, 'gi');
+            res = res.replace(reBeforeTag, '$1 $2');
+          }
+
+          if (spec.spaceAfter) {
+            // Plain text: "100件" -> "100 件"
+            const reAfterChar = new RegExp(`(${escNum})([^\\s<>])`, 'g');
+            res = res.replace(reAfterChar, '$1 $2');
+
+            // Tagged text: "100</s><s id="2">件" -> "100</s> <s id="2">件"
+            const reAfterTag = new RegExp(`(${escNum}<\\/s>|<\\/span>)(<s\\s+id="\\d+">[^\\s])`, 'gi');
+            res = res.replace(reAfterTag, '$1 $2');
+          }
+        }
+
+        res = res.replace(/([^\S\r\n])\1+/g, ' ');
+        return res;
+      },
+
+      preserveTagWhitespace(origRaw, transRaw) {
+        const tagMap = new Map();
+        const tagRegex = /<s id="(\d+)">([\s\S]*?)<\/s>/gi;
+        let m;
+        while ((m = tagRegex.exec(origRaw)) !== null) {
+          const id = m[1];
+          const content = m[2];
+          tagMap.set(id, {
+            leadingSpace: /^\s/.test(content),
+            trailingSpace: /\s$/.test(content)
+          });
+        }
+
+        const origHadSpaceBetweenTags = /<\/s>\s+<s\b/i.test(origRaw);
+
+        let res = transRaw;
+
+        res = res.replace(/<s id="(\d+)">([\s\S]*?)<\/s>/gi, (match, id, content) => {
+          const spec = tagMap.get(id);
+          if (!spec) return match;
+          let newContent = content;
+          if (spec.leadingSpace && !/^\s/.test(newContent)) {
+            newContent = ' ' + newContent;
+          }
+          if (spec.trailingSpace && !/\s$/.test(newContent)) {
+            newContent = newContent + ' ';
+          }
+          return `<s id="${id}">${newContent}</s>`;
+        });
+
+        if (origHadSpaceBetweenTags) {
+          res = res.replace(/<\/s>(?!\s)<s\b/gi, '</s> <s');
+        }
+
+        return res;
       }
     };
 
@@ -6435,6 +6923,9 @@ Strict formatting and tag integrity rules:
           if (state.smartCasing !== false) {
             result = SmartCasingEngine.format(result, targetLang);
           }
+          if (state.protectText !== false) {
+            result = DataProtectionEngine.preserveWhitespace(trimmed, result);
+          }
           this.cache.set(cacheKey, result);
           return result;
         }
@@ -6514,7 +7005,7 @@ Strict formatting and tag integrity rules:
           }
         }
 
-        // 4. Post-processing: Normalize tags, apply ScenarioGlossary calibration, TextSimplificationEngine & Smart Casing to all results
+        // 4. Post-processing: Normalize tags, apply ScenarioGlossary calibration, TextSimplificationEngine, Smart Casing & Whitespace Protection to all results
         for (const [key, val] of resultMap.entries()) {
           if (val) {
             let processed = TagShieldingEngine.repairTags(val);
@@ -6527,6 +7018,9 @@ Strict formatting and tag integrity rules:
             if (state.smartCasing !== false) {
               processed = SmartCasingEngine.format(processed, targetLang);
             }
+            if (state.protectText !== false) {
+              processed = DataProtectionEngine.preserveWhitespace(key, processed);
+            }
             resultMap.set(key, processed);
           }
         }
@@ -6537,6 +7031,7 @@ Strict formatting and tag integrity rules:
     };
 
     // Backward-compatible alias for existing callers
+    TranslationPipeline.fetchWithTimeout = (...args) => TranslationProviders.fetchWithTimeout(...args);
     const UITranslationEngine = TranslationPipeline;
 
     // =====================================================================
@@ -6604,6 +7099,11 @@ Strict formatting and tag integrity rules:
         state.saturation = 0;
         state.lightness = 0;
         render();
+
+        // If artboard renamer modal is active, automatically sync with the new canvas selection!
+        if (state.artboardRenameModalVisible) {
+          debounceTriggerArtboardDetect();
+        }
       },
 
       async 'translation/do-translate'(payload, requestId) {
@@ -6635,6 +7135,9 @@ Strict formatting and tag integrity rules:
             }
             if (state.smartCasing !== false && trans) {
               trans = SmartCasingEngine.format(trans, targetLanguage);
+            }
+            if (state.protectText !== false && trans) {
+              trans = DataProtectionEngine.preserveWhitespace(n.text, trans);
             }
             return {
               id: n.id,
@@ -6696,6 +7199,9 @@ Strict formatting and tag integrity rules:
               }
               if (state.smartCasing !== false && trans) {
                 trans = SmartCasingEngine.format(trans, batch.targetLanguage);
+              }
+              if (state.protectText !== false && trans) {
+                trans = DataProtectionEngine.preserveWhitespace(n.text, trans);
               }
               return {
                 id: n.id,
@@ -7297,8 +7803,900 @@ Strict formatting and tag integrity rules:
           state.importImages.progress = null;
         }
         render();
+      },
+
+      'artboards/languages-detected'(payload) {
+        if (payload?.error) {
+          showToast(payload.error, true);
+          return;
+        }
+        const artboards = payload?.artboards || [];
+        state.detectedArtboards = artboards.map(item => ({
+          ...item,
+          autoDetectedLocale: item.locale,
+          autoDetectedCode: item.code,
+          autoDetectedLangName: item.langName,
+          autoDetectedFlag: item.flag,
+          initialSource: item.source,
+          chosenLocale: item.locale,
+          newName: item.previewName,
+          aiReason: item.source === 'plugin-data' ? '由 VolcBox 翻译链路血统保证' : ''
+        }));
+        if (state.detectedArtboards.length === 0) {
+          showToast('⚠️ 未检测到有效画板', true);
+          return;
+        }
+
+        // Smart Analysis: Check language diversity and Chinese master frames
+        const chineseCount = state.detectedArtboards.filter(item => item.autoDetectedCode === 'zh-CN' || item.autoDetectedCode === 'zh-TW').length;
+        const totalCount = state.detectedArtboards.length;
+        const distinctLocales = new Set(state.detectedArtboards.map(item => item.autoDetectedLocale));
+        const isMostlyChinese = totalCount >= 2 && (chineseCount / totalCount >= 0.5);
+        state.artboardsAllChinese = isMostlyChinese;
+
+        if (totalCount === 24) {
+          if (distinctLocales.size < 8) {
+            // Untranslated master frames duplicated 24 times
+            state.artboardSequenceMode = 'preset-24';
+            state.detectedArtboards.forEach((item, idx) => {
+              const loc = PRESET_24_LOCALES[idx % PRESET_24_LOCALES.length];
+              item.chosenLocale = loc;
+              item.source = 'preset-24';
+              item.aiReason = `检测到中文母版，按出海24国发布标准序列自动对齐 (#${idx + 1} ${loc})`;
+              const l = getLangByLocale(loc);
+              if (l) {
+                item.code = l.code;
+                item.langName = l.name;
+                item.flag = l.flag;
+              }
+            });
+          } else {
+            // Distinct overseas languages already detected by local high-accuracy engine!
+            state.artboardSequenceMode = 'auto';
+            state.detectedArtboards.forEach(item => {
+              item.aiReason = item.source === 'plugin-data' ? '由 VolcBox 翻译链路血统保证' : '本地 24 国高精语系引擎精准识别';
+            });
+          }
+        } else if (totalCount === 38 && distinctLocales.size < 12) {
+          state.artboardSequenceMode = 'preset-38';
+          state.detectedArtboards.forEach((item, idx) => {
+            const loc = PRESET_38_LOCALES[idx % PRESET_38_LOCALES.length];
+            item.chosenLocale = loc;
+            item.source = 'preset-38';
+            item.aiReason = `按后台38种全球标准全集自动对齐 (#${idx + 1} ${loc})`;
+            const l = getLangByLocale(loc);
+            if (l) {
+              item.code = l.code;
+              item.langName = l.name;
+              item.flag = l.flag;
+            }
+          });
+        } else if (isMostlyChinese && totalCount <= 24) {
+          state.artboardSequenceMode = 'preset-24';
+          state.detectedArtboards.forEach((item, idx) => {
+            const loc = PRESET_24_LOCALES[idx % PRESET_24_LOCALES.length];
+            item.chosenLocale = loc;
+            item.source = 'preset-24';
+            item.aiReason = `按出海24国发布标准序列对齐 (#${idx + 1} ${loc})`;
+            const l = getLangByLocale(loc);
+            if (l) {
+              item.code = l.code;
+              item.langName = l.name;
+              item.flag = l.flag;
+            }
+          });
+        } else {
+          state.artboardSequenceMode = 'auto';
+        }
+
+        state.artboardRenameModalVisible = true;
+        updateArtboardRenamePreviews();
+        renderArtboardLocaleModal();
+
+        // Immediately trigger AI Batch Language Identification (Plan A)
+        runAiBatchIdentification();
+      },
+
+      'artboards/rename-completed'(payload) {
+        state.artboardRenameModalVisible = true;
+        const count = payload?.renamedCount || 0;
+        if (count > 0) {
+          state.artboardsRenamedSuccess = true;
+          showToast(`🎉 成功重命名 ${count} 个画板`);
+          const applyBtn = document.getElementById('btn-apply-artboard-renames');
+          if (applyBtn) {
+            applyBtn.textContent = '✅ 已完成重命名 (再次点击可刷新)';
+            applyBtn.style.background = '#059669';
+          }
+        } else {
+          showToast(`⚠️ 重命名未生效，请确保在画布中选中了画板`, true);
+        }
+        renderArtboardLocaleModal();
       }
     };
+
+    const PRESET_24_LOCALES = [
+      'ar-AR', 'bg-BG', 'cs-CZ', 'da-DK', 'de-DE', 'el-GR', 'en-US', 'es-ES',
+      'fr-FR', 'hi-IN', 'hr-HR', 'hu-HU', 'in-ID', 'it-IT', 'ja-JP', 'ko-KR',
+      'ms-MY', 'nl-NL', 'no-NO', 'pl-PL', 'pt-PT', 'ro-RO', 'ru-RU', 'sk-SK'
+    ];
+
+    const PRESET_38_LOCALES = [
+      'zh-CN', 'en-US', 'es-ES', 'de-DE', 'fr-FR', 'cs-CZ', 'bg-BG', 'fi-FI',
+      'lt-LT', 'is-IS', 'ga-IE', 'et-EE', 'sl-SI', 'in-ID', 'ro-RO', 'pt-PT',
+      'it-IT', 'zh-TW', 'vi-VN', 'nl-NL', 'ko-KR', 'hi-IN', 'ja-JP', 'ar-AR',
+      'ru-RU', 'pl-PL', 'ms-MY', 'hu-HU', 'el-GR', 'sv-SE', 'sr-RS', 'da-DK',
+      'no-NO', 'sk-SK', 'hr-HR', 'tr-TR', 'uk-UA', 'th-TH'
+    ];
+
+    const LLM_IDENTIFY_SYSTEM_PROMPT = `You are a world-class internationalization AI engine for global marketing banners and app UI artboards.
+Your task is to analyze extracted text from a batch of artboards belonging to the same marketing campaign and determine the exact target language locale code for each artboard.
+
+Supported 38 standard locales:
+- zh-CN (简体中文), zh-TW (繁體中文), en-US (英语), es-ES (西班牙语), de-DE (德语), fr-FR (法语)
+- cs-CZ (捷克语), bg-BG (保加利亚语), fi-FI (芬兰语), lt-LT (立陶宛语), is-IS (冰岛语), ga-IE (爱尔兰语)
+- et-EE (爱沙尼亚语), sl-SI (斯洛文尼亚语), in-ID (印尼语), ro-RO (罗马尼亚语), pt-PT (葡萄牙语), it-IT (意大利语)
+- vi-VN (越南语), nl-NL (荷兰语), ko-KR (韩语), hi-IN (印地语), ja-JP (日语), ar-AR (阿拉伯语)
+- ru-RU (俄语), pl-PL (波兰语), ms-MY (马来语), hu-HU (匈牙利语), el-GR (希腊语), sv-SE (瑞典语)
+- sr-RS (塞尔维亚语), da-DK (丹麦语), no-NO (挪威语), sk-SK (斯洛伐克语), hr-HR (克罗地亚语), tr-TR (土耳其语)
+- uk-UA (乌克兰语), th-TH (泰语)
+
+Standard Overseas 24 Locales Sequence:
+1: ar-AR, 2: bg-BG, 3: cs-CZ, 4: da-DK, 5: de-DE, 6: el-GR, 7: en-US, 8: es-ES, 9: fr-FR, 10: hi-IN, 11: hr-HR, 12: hu-HU, 13: in-ID, 14: it-IT, 15: ja-JP, 16: ko-KR, 17: ms-MY, 18: nl-NL, 19: no-NO, 20: pl-PL, 21: pt-PT, 22: ro-RO, 23: ru-RU, 24: sk-SK.
+
+Guidelines:
+1. UNTRANSLATED MASTER BATCH DETECTION:
+   If all or nearly all artboards contain identical or nearly identical Chinese promotional text (meaning the designer duplicated Chinese master frames waiting for overseas localization replacement), map them sequentially by their index (1 to N) to the Standard Overseas 24 Locales Sequence above. Reason must state: "检测到中文母版，按出海24国发布标准序列自动对齐".
+2. TRANSLATED MULTI-LANGUAGE BANNERS:
+   If artboards contain translated text in different languages, analyze each artboard's text carefully:
+   - Even if an artboard contains English brand words or symbols (e.g. "XTrend", "VIP", "$500 Bonus", "App Store"), identify the target local language used in the rest of the text.
+   - Distinguish carefully between closely related languages:
+     * Indonesian (in-ID) vs Malay (ms-MY): "hingga/bisa/akun/uang" (ID) vs "sehingga/boleh/akaun/wang" (MY).
+     * Portuguese (pt-PT) vs Spanish (es-ES): "bônus/receba/taxa/com/não" (PT) vs "bono/obtenga/con/sin/más" (ES).
+     * Czech (cs-CZ) vs Slovak (sk-SK): "získejte/nulovými" (CS) vs "získajte/nulovými poplatkami" (SK).
+     * Danish (da-DK) vs Norwegian (no-NO) vs Swedish (sv-SE): "op til/begynd" (DA) vs "opptil/begynn" (NO) vs "upp till/börja/och" (SV).
+     * Russian (ru-RU) vs Ukrainian (uk-UA) vs Bulgarian (bg-BG): "точки/се/лева" (BG) vs "і/ї/є" (UK).
+3. Output strictly a JSON array without markdown formatting:
+[
+  { "id": "<artboard_id>", "locale": "<locale_code>", "reason": "<short reasoning in Chinese, e.g. 包含西语特定变位动词与介词>" }
+]`;
+
+    function parseLlmIdentificationJson(raw) {
+      if (!raw) return [];
+      let clean = raw.trim();
+      clean = clean.replace(/```(?:json)?/gi, '').trim();
+      const start = clean.indexOf('[');
+      const end = clean.lastIndexOf(']');
+      if (start !== -1 && end !== -1 && end > start) {
+        clean = clean.slice(start, end + 1);
+      }
+      try {
+        return JSON.parse(clean);
+      } catch (e) {
+        const items = [];
+        const re = /\{\s*"id"\s*:\s*"?([^",\s}]+)"?\s*,\s*"locale"\s*:\s*"([^"]+)"(?:[^\}]*?"reason"\s*:\s*"([^"]*)")?/gi;
+        let m;
+        while ((m = re.exec(clean)) !== null) {
+          items.push({ id: m[1], locale: m[2], reason: m[3] || '' });
+        }
+        return items;
+      }
+    }
+
+    function getActiveAiProviderInfo() {
+      const custom = state.settings?.customLlm || {};
+      let apiKey = (custom.apiKey || '').trim();
+      let modelName = (custom.model || '').trim();
+      let preset = custom.preset || 'deepseek';
+
+      if (!apiKey && state.settings?.providerCredentials) {
+        for (const k of ['deepseek', 'openai', 'siliconflow', 'kimi', 'zhipu', 'custom-llm']) {
+          const cred = state.settings.providerCredentials[k];
+          if (cred?.apiKey?.trim()) {
+            apiKey = cred.apiKey.trim();
+            preset = k;
+            const prov = LLM_PROVIDERS[k];
+            if (!modelName && prov) modelName = prov.defaultModel;
+            break;
+          }
+        }
+      }
+
+      const prov = LLM_PROVIDERS[preset] || LLM_PROVIDERS.deepseek;
+      if (!modelName) modelName = prov?.defaultModel || 'deepseek-chat';
+
+      const providerNames = {
+        'deepseek': 'DeepSeek AI',
+        'openai': 'OpenAI GPT',
+        'siliconflow': 'SiliconFlow',
+        'kimi': 'Kimi (Moonshot)',
+        'zhipu': '智谱 GLM',
+        'custom-llm': '自定义大模型'
+      };
+
+      const displayName = providerNames[preset] || modelName || 'AI 大模型';
+      return {
+        hasKey: Boolean(apiKey),
+        name: displayName,
+        model: modelName
+      };
+    }
+
+    let artboardDetectDebounce = null;
+    function debounceTriggerArtboardDetect() {
+      if (artboardDetectDebounce) clearTimeout(artboardDetectDebounce);
+      artboardDetectDebounce = setTimeout(() => {
+        if (!state.artboardRenameModalVisible) return;
+        state.artboardsRenamedSuccess = false;
+        const statusDot = document.getElementById('artboard-ai-status-dot');
+        const statusLabel = document.getElementById('artboard-api-status');
+        if (statusDot) statusDot.style.background = '#F59E0B';
+        if (statusLabel) statusLabel.textContent = '· 检测中...';
+        parent.postMessage({
+          pluginMessage: {
+            type: 'artboards/detect-languages',
+            payload: { pattern: getActiveRenamePattern() }
+          }
+        }, '*');
+      }, 150);
+    }
+
+    function reidentifyArtboards() {
+      state.artboardsRenamedSuccess = false;
+      const statusDot = document.getElementById('artboard-ai-status-dot');
+      const statusLabel = document.getElementById('artboard-api-status');
+      if (statusDot) statusDot.style.background = '#F59E0B';
+      if (statusLabel) statusLabel.textContent = '· 重新识别中...';
+      parent.postMessage({
+        pluginMessage: {
+          type: 'artboards/detect-languages',
+          payload: { pattern: getActiveRenamePattern() }
+        }
+      }, '*');
+    }
+
+    async function runAiBatchIdentification() {
+      const artboards = state.detectedArtboards;
+      const apiInfo = getActiveAiProviderInfo();
+
+      const apiNameEl = document.getElementById('artboard-api-name');
+      const statusDot = document.getElementById('artboard-ai-status-dot');
+      const statusLabel = document.getElementById('artboard-api-status');
+
+      if (apiNameEl) apiNameEl.textContent = apiInfo.hasKey ? apiInfo.name : '本地高精引擎';
+
+      if (!artboards || artboards.length === 0) {
+        if (statusDot) statusDot.style.background = '#9E9689';
+        if (statusLabel) statusLabel.textContent = '· 未选画板';
+        return;
+      }
+
+      if (statusDot) statusDot.style.background = '#F59E0B';
+      if (statusLabel) statusLabel.textContent = '· 识别中...';
+
+      // 1. Resolve LLM Configuration
+      const custom = state.settings?.customLlm || {};
+      let apiKey = (custom.apiKey || '').trim();
+      let baseUrl = (custom.baseUrl || '').trim();
+      let modelName = (custom.model || '').trim();
+      let preset = custom.preset || 'deepseek';
+
+      // Fallback to providerCredentials if customLlm.apiKey is empty
+      if (!apiKey && state.settings?.providerCredentials) {
+        for (const k of ['deepseek', 'openai', 'siliconflow', 'kimi', 'zhipu', 'custom-llm']) {
+          const cred = state.settings.providerCredentials[k];
+          if (cred?.apiKey?.trim()) {
+            apiKey = cred.apiKey.trim();
+            preset = k;
+            const prov = LLM_PROVIDERS[k];
+            if (!baseUrl && prov) baseUrl = prov.baseUrl;
+            if (!modelName && prov) modelName = prov.defaultModel;
+            break;
+          }
+        }
+      }
+
+      const prov = LLM_PROVIDERS[preset] || LLM_PROVIDERS.deepseek;
+      if (!baseUrl) baseUrl = prov.baseUrl || 'https://api.deepseek.com';
+      if (!modelName) modelName = prov.defaultModel || 'deepseek-chat';
+      const hasApiKey = Boolean(apiKey);
+
+      if (hasApiKey) {
+        try {
+          const cleanBase = baseUrl.replace(/\/+$/, '');
+          const url = cleanBase.endsWith('/chat/completions') ? cleanBase : `${cleanBase}/chat/completions`;
+
+          const payloadList = artboards.map((item, idx) => ({
+            id: item.id,
+            index: idx + 1,
+            artboardName: item.originalName,
+            prominentTexts: item.prominentTexts || [item.sampleText],
+            pluginDataLocale: item.pluginDataLocale || null
+          }));
+
+          const res = await TranslationProviders.fetchWithTimeout(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                { role: 'system', content: LLM_IDENTIFY_SYSTEM_PROMPT },
+                { role: 'user', content: JSON.stringify(payloadList) }
+              ],
+              temperature: 0.1
+            })
+          }, 16000);
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawContent = data.choices?.[0]?.message?.content || '';
+            const results = parseLlmIdentificationJson(rawContent);
+
+            if (results && results.length > 0) {
+              const resMap = new Map();
+              for (const r of results) {
+                if (r.id) resMap.set(String(r.id), r);
+              }
+
+              artboards.forEach(item => {
+                const r = resMap.get(String(item.id));
+                if (r && r.locale) {
+                  const loc = I18N_LOCALE_MAP[r.locale] || r.locale;
+                  item.chosenLocale = loc;
+                  item.source = 'llm';
+                  const l = getLangByLocale(loc);
+                  if (l) {
+                    item.code = l.code;
+                    item.langName = l.name;
+                    item.flag = l.flag;
+                  }
+                }
+              });
+
+              if (statusDot) statusDot.style.background = '#10B981';
+              if (statusLabel) statusLabel.textContent = '· 已就绪';
+              if (state.artboardActivePreset === 'custom') {
+                runAiFormatAnalysis(true);
+              } else {
+                updateArtboardRenamePreviews();
+                renderArtboardLocaleModal();
+              }
+              return;
+            }
+          } else {
+            console.warn('[LLM Call HTTP Error]', res.status);
+          }
+        } catch (llmErr) {
+          console.warn('[LLM LID Fallback]', llmErr);
+        }
+      }
+
+      // Fallback to local high-precision engine
+      if (statusDot) statusDot.style.background = '#10B981';
+      if (statusLabel) statusLabel.textContent = hasApiKey ? '· 已就绪' : '· 本地引擎就绪';
+      if (state.artboardActivePreset === 'custom') {
+        runAiFormatAnalysis(true);
+      } else {
+        updateArtboardRenamePreviews();
+        renderArtboardLocaleModal();
+      }
+    }
+
+    function openArtboardLocaleRenamer() {
+      if (state.selection.totalSelected === 0) {
+        showToast('请先选中需要识别语种的画板', true);
+        return;
+      }
+      showToast('🔍 正在识别画板语种...');
+      parent.postMessage({
+        pluginMessage: {
+          type: 'artboards/detect-languages',
+          payload: { pattern: getActiveRenamePattern() }
+        }
+      }, '*');
+    }
+
+    function closeArtboardLocaleModal() {
+      state.artboardRenameModalVisible = false;
+      const modal = document.getElementById('artboard-locale-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function selectArtboardPreset(format) {
+      state.artboardActivePreset = format;
+      state.artboardsRenamedSuccess = false;
+      const customBox = document.getElementById('artboard-custom-format-box');
+      const input = document.getElementById('artboard-rename-format-input');
+
+      if (format === 'custom') {
+        if (customBox) customBox.style.display = 'flex';
+        state.artboardRenamePattern = state.artboardCustomPattern || input?.value || '{name}_{locale}';
+        if (input) {
+          input.value = state.artboardRenamePattern;
+          setTimeout(() => input.focus(), 50);
+        }
+        runAiFormatAnalysis(false);
+      } else {
+        if (customBox) customBox.style.display = 'none';
+        state.artboardRenamePattern = format;
+        updateArtboardRenamePreviews();
+      }
+
+      // Update segment-btn active class
+      const btns = document.querySelectorAll('.segment-btn');
+      btns.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-format') === format);
+      });
+
+      updateCustomPreviewExample();
+      renderArtboardLocaleModal();
+    }
+
+    function onArtboardFormatInput(val) {
+      state.artboardRenamePattern = val;
+      state.artboardCustomPattern = val;
+      state.artboardActivePreset = 'custom';
+      state.artboardsRenamedSuccess = false;
+      applySmartLocalFormat(val);
+      runAiFormatAnalysis(false);
+    }
+
+    function setCustomFormatExample(ex) {
+      const input = document.getElementById('artboard-rename-format-input');
+      if (input) input.value = ex;
+      state.artboardRenamePattern = ex;
+      state.artboardCustomPattern = ex;
+      state.artboardActivePreset = 'custom';
+      state.artboardsRenamedSuccess = false;
+      applySmartLocalFormat(ex);
+      runAiFormatAnalysis(true);
+    }
+
+    function resetCustomArtboardFormat() {
+      const def = '{name}_{locale}';
+      state.artboardRenamePattern = def;
+      state.artboardCustomPattern = def;
+      state.artboardActivePreset = 'custom';
+      state.artboardsRenamedSuccess = false;
+      const input = document.getElementById('artboard-rename-format-input');
+      if (input) input.value = def;
+      applySmartLocalFormat(def);
+      runAiFormatAnalysis(true);
+    }
+
+    function insertArtboardFormatVar(varStr) {
+      const input = document.getElementById('artboard-rename-format-input');
+      if (!input) return;
+      const start = input.selectionStart != null ? input.selectionStart : input.value.length;
+      const end = input.selectionEnd != null ? input.selectionEnd : input.value.length;
+      const text = input.value;
+      input.value = text.substring(0, start) + varStr + text.substring(end);
+      state.artboardRenamePattern = input.value;
+      state.artboardCustomPattern = input.value;
+      state.artboardActivePreset = 'custom';
+      state.artboardsRenamedSuccess = false;
+      input.focus();
+      input.selectionStart = input.selectionEnd = start + varStr.length;
+      applySmartLocalFormat(input.value);
+      runAiFormatAnalysis(false);
+    }
+
+    function parseLlmRenameJson(raw) {
+      if (!raw) return [];
+      let clean = raw.trim().replace(/```(?:json)?/gi, '').trim();
+      const start = clean.indexOf('[');
+      const end = clean.lastIndexOf(']');
+      if (start !== -1 && end !== -1 && end > start) {
+        clean = clean.slice(start, end + 1);
+      }
+      try {
+        const parsed = JSON.parse(clean);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        const items = [];
+        const re = /\{\s*"id"\s*:\s*"?([^",\s}]+)"?\s*,\s*"newName"\s*:\s*"([^"]+)"/gi;
+        let m;
+        while ((m = re.exec(clean)) !== null) {
+          items.push({ id: m[1], newName: m[2] });
+        }
+        return items;
+      }
+      return [];
+    }
+
+    function applySmartLocalFormat(rawRule) {
+      if (!rawRule || !state.detectedArtboards || state.detectedArtboards.length === 0) return;
+      let rule = rawRule.trim();
+
+      // Convert natural language keywords to template variables if no curly braces
+      let convertedPattern = rule;
+      if (!convertedPattern.includes('{')) {
+        convertedPattern = convertedPattern
+          .replace(/\[?画板原名\]?|\[?画板名\]?|\[?原画板名\]?|\[?原名\]?/gi, '{name}')
+          .replace(/\[?语言标准代码\]?|\[?语言代码\]?|\[?标准代码\]?|\[?地区代码\]?/gi, '{locale}')
+          .replace(/\[?中文语种名\]?|\[?中文语种\]?|\[?中文语言\]?|\[?语种中文\]?|\[?语言中文\]?|\[?中文名\]?|\[?中文\]?/gi, '{name_cn}')
+          .replace(/\[?简写代码\]?|\[?语言简写\]?|\[?简写\]?|\[?简码\]?/gi, '{code}')
+          .replace(/\[?英文语种名\]?|\[?英文语种\]?|\[?英文名\]?/gi, '{en}');
+      }
+
+      state.detectedArtboards.forEach((item, idx) => {
+        const lang = getLangByLocale(item.chosenLocale) || getLangByCode(item.code);
+        let newName = formatArtboardNameUI(convertedPattern, item.originalName, {
+          code: item.code,
+          locale: item.chosenLocale,
+          name: lang?.name || item.langName,
+          en: lang?.en || item.chosenLocale
+        });
+
+        if (/大写|uppercase/i.test(rule) && !rule.includes('{')) {
+          if (/代码|locale|code/i.test(rule)) {
+            newName = newName.replace(new RegExp(item.code, 'gi'), (item.code || '').toUpperCase())
+                             .replace(new RegExp(item.chosenLocale, 'gi'), (item.chosenLocale || '').toUpperCase());
+          }
+        }
+
+        item.newName = newName;
+        const tag = document.getElementById(`artboard-rename-preview-${idx}`);
+        if (tag) {
+          tag.textContent = newName;
+          tag.title = `重命名目标: ${newName}`;
+        }
+      });
+
+      const previewEl = document.getElementById('artboard-custom-preview-example');
+      if (previewEl && state.detectedArtboards[0]?.newName) {
+        previewEl.textContent = state.detectedArtboards[0].newName;
+      }
+    }
+
+    let aiFormatAnalysisTimer = null;
+
+    async function runAiFormatAnalysis(forceImmediate = false) {
+      if (aiFormatAnalysisTimer) {
+        clearTimeout(aiFormatAnalysisTimer);
+        aiFormatAnalysisTimer = null;
+      }
+
+      const doAnalysis = async () => {
+        const input = document.getElementById('artboard-rename-format-input');
+        const userRule = (input ? input.value : (state.artboardCustomPattern || '')).trim();
+        if (!userRule || !state.detectedArtboards || state.detectedArtboards.length === 0) return;
+
+        const badgeEl = document.getElementById('artboard-custom-ai-badge');
+        const analyzeBtn = document.getElementById('btn-artboard-ai-analyze');
+        const previewEl = document.getElementById('artboard-custom-preview-example');
+
+        // 1. Instant 0ms Local Smart Heuristic
+        applySmartLocalFormat(userRule);
+
+        // 2. Resolve Active LLM Credentials
+        const custom = state.settings?.customLlm || {};
+        let apiKey = (custom.apiKey || '').trim();
+        let baseUrl = (custom.baseUrl || '').trim();
+        let modelName = (custom.model || '').trim();
+        let preset = custom.preset || 'deepseek';
+
+        if (!apiKey && state.settings?.providerCredentials) {
+          for (const k of ['deepseek', 'openai', 'siliconflow', 'kimi', 'zhipu', 'custom-llm']) {
+            const cred = state.settings.providerCredentials[k];
+            if (cred?.apiKey?.trim()) {
+              apiKey = cred.apiKey.trim();
+              preset = k;
+              const prov = LLM_PROVIDERS[k];
+              if (!baseUrl && prov) baseUrl = prov.baseUrl;
+              if (!modelName && prov) modelName = prov.defaultModel;
+              break;
+            }
+          }
+        }
+
+        if (!apiKey) {
+          if (badgeEl) badgeEl.innerHTML = '<span style="color: var(--text-sub);">⚡️ 本地智能分析</span>';
+          return;
+        }
+
+        const prov = LLM_PROVIDERS[preset] || LLM_PROVIDERS.deepseek;
+        if (!baseUrl) baseUrl = prov?.baseUrl || 'https://api.deepseek.com';
+        if (!modelName) modelName = prov?.defaultModel || 'deepseek-chat';
+
+        if (badgeEl) badgeEl.innerHTML = '<span style="color: #F59E0B;">✨ AI 正在分析格式效果...</span>';
+        if (analyzeBtn) {
+          analyzeBtn.innerHTML = '<span>⏳...</span>';
+          analyzeBtn.disabled = true;
+        }
+
+        try {
+          const cleanBase = baseUrl.replace(/\/+$/, '');
+          const url = cleanBase.endsWith('/chat/completions') ? cleanBase : `${cleanBase}/chat/completions`;
+
+          const artboardsPayload = state.detectedArtboards.map(item => {
+            const lang = getLangByLocale(item.chosenLocale) || getLangByCode(item.code);
+            return {
+              id: String(item.id),
+              originalName: item.originalName,
+              locale: item.chosenLocale,
+              code: item.code || lang?.code || '',
+              name_cn: lang?.name || item.langName || '',
+              name_en: lang?.en || item.chosenLocale
+            };
+          });
+
+          const systemPrompt = `You are an AI assistant for a Figma design tool. Your job is to rename design artboards based on the user's custom formatting requirement, sample, or natural language prompt.
+User prompt/format rule: "${userRule}"
+
+You will receive an array of artboard metadata:
+[
+  { "id": "1:2", "originalName": "Banner", "locale": "ar-AR", "code": "ar", "name_cn": "阿拉伯语", "name_en": "Arabic" }
+]
+
+Instructions:
+1. Understand the user's intended naming pattern (e.g., free text description like "画板名加下划线加中文", example like "Banner-en", or pattern like "{name}_{locale}").
+2. Output the exact "newName" for every artboard according to that rule. Keep formatting unified and clean.
+3. Return ONLY a valid JSON array of objects with "id" and "newName", with NO markdown fences or explanatory text. Example:
+[
+  { "id": "1:2", "newName": "Banner_阿拉伯语" }
+]`;
+
+          const res = await TranslationProviders.fetchWithTimeout(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: JSON.stringify(artboardsPayload) }
+              ],
+              temperature: 0.1
+            })
+          }, 12000);
+
+          if (res.ok) {
+            const data = await res.json();
+            const raw = data.choices?.[0]?.message?.content || '';
+            const results = parseLlmRenameJson(raw);
+            if (results && results.length > 0) {
+              const map = new Map();
+              for (const r of results) {
+                if (r.id && r.newName) map.set(String(r.id), String(r.newName).trim());
+              }
+
+              state.detectedArtboards.forEach((item, idx) => {
+                const aiName = map.get(String(item.id));
+                if (aiName) {
+                  item.newName = aiName;
+                  const tag = document.getElementById(`artboard-rename-preview-${idx}`);
+                  if (tag) {
+                    tag.textContent = aiName;
+                    tag.title = `重命名目标: ${aiName}`;
+                  }
+                }
+              });
+
+              if (previewEl && state.detectedArtboards[0]?.newName) {
+                previewEl.textContent = state.detectedArtboards[0].newName;
+              }
+              if (badgeEl) badgeEl.innerHTML = '<span style="color: #10B981;">✓ AI已智能分析</span>';
+            }
+          }
+        } catch (e) {
+          console.warn('[AI Format Analysis Error]', e);
+          if (badgeEl) badgeEl.innerHTML = '<span style="color: var(--text-sub);">⚡️ 本地智能分析</span>';
+        } finally {
+          if (analyzeBtn) {
+            analyzeBtn.innerHTML = '<span>✨ AI分析</span>';
+            analyzeBtn.disabled = false;
+          }
+        }
+      };
+
+      if (forceImmediate) {
+        await doAnalysis();
+      } else {
+        aiFormatAnalysisTimer = setTimeout(doAnalysis, 600);
+      }
+    }
+
+    function updateCustomPreviewExample() {
+      const exampleEl = document.getElementById('artboard-custom-preview-example');
+      if (!exampleEl) return;
+      const sampleArtboard = state.detectedArtboards?.[0];
+      if (sampleArtboard?.newName) {
+        exampleEl.textContent = sampleArtboard.newName;
+        return;
+      }
+      const pattern = state.artboardCustomPattern || state.artboardRenamePattern || '{name}_{locale}';
+      const sampleName = sampleArtboard?.originalName || 'Frame';
+      const sampleLang = getLangByLocale(sampleArtboard?.chosenLocale || 'ar-AR') || { code: 'ar', locale: 'ar-AR', name: '阿拉伯语', en: 'Arabic' };
+      exampleEl.textContent = formatArtboardNameUI(pattern, sampleName, sampleLang);
+    }
+
+    function resetArtboardFormat(format) {
+      selectArtboardPreset(format || '{locale}');
+    }
+
+    function getActiveRenamePattern() {
+      if (state.artboardActivePreset === 'custom') {
+        return state.artboardCustomPattern || state.artboardRenamePattern || '{name}_{locale}';
+      }
+      return state.artboardActivePreset || state.artboardRenamePattern || '{locale}';
+    }
+
+    function updateArtboardRenamePreviews() {
+      const pattern = getActiveRenamePattern();
+      if (state.detectedArtboards) {
+        state.detectedArtboards.forEach((item, idx) => {
+          const lang = getLangByLocale(item.chosenLocale) || getLangByCode(item.code);
+          const newName = formatArtboardNameUI(pattern, item.originalName, {
+            code: item.code,
+            locale: item.chosenLocale,
+            name: lang?.name || item.langName,
+            en: lang?.en || item.chosenLocale
+          });
+          item.newName = newName;
+          const tag = document.getElementById(`artboard-rename-preview-${idx}`);
+          if (tag) {
+            tag.textContent = newName;
+            tag.title = `重命名目标: ${newName}`;
+          }
+        });
+      }
+    }
+
+    function changeDetectedArtboardLang(idx, newLocale) {
+      if (!state.detectedArtboards[idx]) return;
+      state.detectedArtboards[idx].chosenLocale = newLocale;
+      state.detectedArtboards[idx].source = 'manual';
+      state.artboardsRenamedSuccess = false;
+      const l = getLangByLocale(newLocale);
+      if (l) {
+        state.detectedArtboards[idx].code = l.code;
+        state.detectedArtboards[idx].langName = l.name;
+        state.detectedArtboards[idx].flag = l.flag;
+      }
+      if (state.artboardActivePreset === 'custom') {
+        runAiFormatAnalysis(true);
+      } else {
+        updateArtboardRenamePreviews();
+        renderArtboardLocaleModal();
+      }
+    }
+
+    function applyArtboardLocaleRenames() {
+      if (!state.detectedArtboards || state.detectedArtboards.length === 0) return;
+      const pattern = getActiveRenamePattern();
+      const renames = state.detectedArtboards.map(item => {
+        const lang = getLangByLocale(item.chosenLocale) || getLangByCode(item.code);
+        const calculatedName = formatArtboardNameUI(pattern, item.originalName, {
+          code: item.code,
+          locale: item.chosenLocale,
+          name: lang?.name || item.langName,
+          en: lang?.en || item.chosenLocale
+        });
+        const finalName = item.newName || calculatedName || item.previewName || item.chosenLocale || item.originalName;
+        return {
+          id: item.id,
+          newName: finalName
+        };
+      });
+      parent.postMessage({
+        pluginMessage: {
+          type: 'artboards/apply-locales-rename',
+          payload: { renames }
+        }
+      }, '*');
+    }
+
+    function renderArtboardLocaleModal() {
+      const modal = document.getElementById('artboard-locale-modal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+
+      const countBadge = document.getElementById('artboard-detected-count-badge');
+      if (countBadge) {
+        countBadge.textContent = `(${state.detectedArtboards.length})`;
+      }
+
+      const apiInfo = getActiveAiProviderInfo();
+      const apiNameEl = document.getElementById('artboard-api-name');
+      if (apiNameEl) apiNameEl.textContent = apiInfo.hasKey ? apiInfo.name : '本地高精引擎';
+
+      const currentPreset = state.artboardActivePreset || '{locale}';
+
+      const btns = document.querySelectorAll('.segment-btn');
+      btns.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-format') === currentPreset);
+      });
+
+      const customBox = document.getElementById('artboard-custom-format-box');
+      if (customBox) {
+        customBox.style.display = currentPreset === 'custom' ? 'flex' : 'none';
+      }
+      updateCustomPreviewExample();
+
+      const formatInput = document.getElementById('artboard-rename-format-input');
+      if (formatInput) {
+        formatInput.value = state.artboardCustomPattern || '{name}_{locale}';
+      }
+
+      const applyBtn = document.getElementById('btn-apply-artboard-renames');
+      if (applyBtn) {
+        if (state.detectedArtboards.length === 0) {
+          applyBtn.className = 'btn btn-primary';
+          applyBtn.textContent = '✨ 一键重命名';
+          applyBtn.disabled = true;
+          applyBtn.style.background = '';
+        } else if (state.artboardsRenamedSuccess) {
+          applyBtn.className = 'btn btn-success';
+          applyBtn.textContent = '✓ 重命名已完成 (可再次点击)';
+          applyBtn.disabled = false;
+          applyBtn.style.background = '';
+        } else {
+          applyBtn.className = 'btn btn-primary';
+          applyBtn.textContent = `✨ 一键重命名 (${state.detectedArtboards.length})`;
+          applyBtn.disabled = false;
+          applyBtn.style.background = '';
+        }
+      }
+
+      const listContainer = document.getElementById('artboard-detected-list');
+      if (!listContainer) return;
+
+      if (state.detectedArtboards.length === 0) {
+        listContainer.innerHTML = `
+          <div style="padding: 40px 16px; text-align: center; color: var(--text-muted); font-size: 11.5px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <span style="font-size: 24px; opacity: 0.6;">🖼️</span>
+            <span style="font-weight: 500; color: var(--text-sub);">当前未选中画板</span>
+            <span style="font-size: 10px; color: var(--text-muted);">在画布上点击选中画板，内容将自动同步</span>
+          </div>
+        `;
+        return;
+      }
+
+      const pattern = getActiveRenamePattern();
+
+      listContainer.innerHTML = state.detectedArtboards.map((item, idx) => {
+        const langOptions = ALL_LANGUAGES.map(l => {
+          const loc = l.locale || l.code;
+          const isSel = loc === item.chosenLocale;
+          return `<option value="${loc}" ${isSel ? 'selected' : ''}>${l.flag} ${l.name}</option>`;
+        }).join('');
+
+        const calculated = formatArtboardNameUI(pattern, item.originalName, {
+          code: item.code,
+          locale: item.chosenLocale,
+          name: item.langName,
+          en: item.chosenLocale
+        });
+        const newName = (state.artboardActivePreset === 'custom' && item.newName) ? item.newName : calculated;
+        item.newName = newName;
+
+        const isRenamed = Boolean(state.artboardsRenamedSuccess);
+        const padIdx = String(idx + 1).padStart(2, '0');
+
+        return `
+          <div class="artboard-row">
+            <div class="artboard-row-left">
+              <span class="artboard-idx">${padIdx}</span>
+              <span class="artboard-orig-name" title="${item.originalName}">${item.originalName}</span>
+              <span class="artboard-arrow">➔</span>
+              <span id="artboard-rename-preview-${idx}" class="artboard-target-name ${isRenamed ? 'renamed' : ''}" title="重命名目标: ${newName}">${newName}</span>
+              ${isRenamed ? '<span style="font-size: 10px; color: #059669; font-weight: 700; flex-shrink: 0;">✓</span>' : ''}
+            </div>
+            <div class="artboard-row-right">
+              <select class="artboard-lang-select" onchange="changeDetectedArtboardLang(${idx}, this.value)">
+                ${langOptions}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
     window.onmessage = async (event) => {
       const msg = event.data?.pluginMessage;
@@ -7320,6 +8718,10 @@ Strict formatting and tag integrity rules:
         if (lp && lp.style.display !== 'none') {
           closeLangPicker();
         }
+        const ar = document.getElementById('artboard-locale-modal');
+        if (ar && ar.style.display !== 'none') {
+          closeArtboardLocaleModal();
+        }
         if (state.editingScheme) {
           state.editingScheme = null;
           render();
@@ -7335,16 +8737,11 @@ Strict formatting and tag integrity rules:
       }
     });
 
-    // Initial render & local service check
-    render();
-    checkLocalService();
-    setInterval(checkLocalService, 3000);
-    parent.postMessage({ pluginMessage: { type: 'selection/request', payload: {} } }, '*');
-  </script>
-
     // Global Keyboard Shortcuts (ESC & Cmd/Ctrl+Enter)
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        closeArtboardLocaleModal();
+        closeLangPicker();
         const modals = document.querySelectorAll('.modal-backdrop, .dialog-overlay, .dropdown-menu.show');
         modals.forEach(m => m.style.display = 'none');
       }
@@ -7353,5 +8750,12 @@ Strict formatting and tag integrity rules:
         if (primaryBtn) primaryBtn.click();
       }
     });
+
+    // Initial render & local service check
+    render();
+    checkLocalService();
+    setInterval(checkLocalService, 3000);
+    parent.postMessage({ pluginMessage: { type: 'selection/request', payload: {} } }, '*');
+  </script>
 </body>
 </html>
